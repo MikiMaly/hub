@@ -27,11 +27,11 @@ export async function onRequestPost({ request, env }) {
   }
 
   const maxAge = 60 * 60 * 24 * 30; // 30 dní
-  return new Response(JSON.stringify({ ok: true }), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json',
-      'Set-Cookie': `hub_auth=1; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`,
-    },
-  });
+  const secure = 'HttpOnly; Secure; SameSite=Lax';
+  const headers = new Headers({ 'Content-Type': 'application/json' });
+  // HttpOnly cookie — čte ji pouze middleware (ochrana /private/*)
+  headers.append('Set-Cookie', `hub_auth=1; Path=/; Max-Age=${maxAge}; ${secure}`);
+  // JS-readable cookie — pouze pro UI stav (skrytí/zobrazení odkazů)
+  headers.append('Set-Cookie', `hub_ui=1; Path=/; Max-Age=${maxAge}; Secure; SameSite=Lax`);
+  return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }

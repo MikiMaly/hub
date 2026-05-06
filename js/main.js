@@ -46,7 +46,7 @@ function renderPublicApps() {
 }
 
 function checkAuth() {
-  const isLoggedIn = getCookie('hub_auth') === '1';
+  const isLoggedIn = getCookie('hub_ui') === '1'; // hub_auth je HttpOnly, JS čte hub_ui
   const adminLink = document.getElementById('adminLink');
   const privateContent = document.getElementById('privateContent');
 
