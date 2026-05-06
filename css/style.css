@@ -322,6 +322,7 @@ a:hover { text-decoration: underline; }
   background: linear-gradient(135deg, rgba(88,166,255,.04) 0%, transparent 60%);
   opacity: 0;
   transition: opacity var(--transition);
+  pointer-events: none;
 }
 
 .card:hover {
