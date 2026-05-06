@@ -3,9 +3,13 @@ const PUBLIC_APPS = [
   {
     title: "Video Grabber",
     desc: "Stahuj videa z YouTube a dalších zdrojů přes jednoduché webové UI. Fronta, progress, paralelní stahování.",
-    url: "https://github.com/MikiMaly/py_video_grabber/releases/latest",
+    url: "https://github.com/MikiMaly/py_video_grabber",
     icon: "/assets/video-grabber.png",
     tag: "python / yt-dlp",
+    downloads: [
+      { label: "Windows", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest/download/UltimateVideoDownloader-v7.0-win64.zip" },
+      { label: "macOS",   url: "https://github.com/MikiMaly/py_video_grabber/releases/latest" },
+    ],
   },
 ];
 
@@ -17,28 +21,38 @@ function getCookie(name) {
 }
 
 function makeCard(app) {
-  const a = document.createElement('a');
-  a.href = app.url;
-  a.className = 'card card--link';
-  if (app.external !== false) {
-    a.target = '_blank';
-    a.rel = 'noopener';
+  const card = document.createElement(app.downloads ? 'div' : 'a');
+  card.className = 'card' + (app.downloads ? '' : ' card--link');
+  if (!app.downloads) {
+    card.href = app.url;
+    if (app.external !== false) { card.target = '_blank'; card.rel = 'noopener'; }
   }
+
   const iconHtml = (app.icon && app.icon.startsWith('/'))
     ? `<img src="${app.icon}" class="card-icon-img" alt="" />`
     : `<div class="card-icon">${app.icon || '🔗'}</div>`;
-  a.innerHTML = `
+
+  const footerHtml = app.downloads
+    ? `<div class="card-footer">
+        <span class="card-tag">${app.tag || ''}</span>
+        <div class="card-downloads">
+          ${app.downloads.map(d => `<a href="${d.url}" class="dl-btn" target="_blank" rel="noopener">⬇ ${d.label}</a>`).join('')}
+        </div>
+       </div>`
+    : `<div class="card-footer">
+        <span class="card-tag">${app.tag || ''}</span>
+        <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+       </div>`;
+
+  card.innerHTML = `
     <div class="card-icon-wrap">${iconHtml}</div>
-    <h3 class="card-title">${app.title}</h3>
+    <h3 class="card-title">${app.downloads ? `<a href="${app.url}" target="_blank" rel="noopener">${app.title}</a>` : app.title}</h3>
     <p class="card-desc">${app.desc || ''}</p>
-    <div class="card-footer">
-      <span class="card-tag">${app.tag || ''}</span>
-      <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M5 12h14M12 5l7 7-7 7"/>
-      </svg>
-    </div>
+    ${footerHtml}
   `;
-  return a;
+  return card;
 }
 
 function renderPublicApps() {
