@@ -8,7 +8,7 @@ const PUBLIC_APPS = [
     tag: "python / yt-dlp",
     downloads: [
       { label: "Windows", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest/download/UltimateVideoDownloader-v7.0-win64.zip" },
-      { label: "macOS",   url: "https://github.com/MikiMaly/py_video_grabber/releases/latest" },
+      { label: "macOS",   url: "https://github.com/MikiMaly/py_video_grabber/releases/download/v7.0/UltimateVideoDownloader-v7-beta-macos.dmg" },
     ],
   },
 ];
