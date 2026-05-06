@@ -9,6 +9,9 @@ function switchTab(tab) {
   document.getElementById('loginError').hidden = true;
 }
 
+document.getElementById('tabPassword').addEventListener('click', () => switchTab('password'));
+document.getElementById('tabCode').addEventListener('click', () => switchTab('code'));
+
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
