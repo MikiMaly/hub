@@ -1,14 +1,13 @@
 // Config — uprav dle potřeby
 const PUBLIC_APPS = [
   {
-    title: "Video Grabber",
-    desc: "Stahuj videa z YouTube a dalších zdrojů přes jednoduché webové UI. Fronta, progress, paralelní stahování.",
+    title: "Ultimate Video Downloader",
+    desc: "Stahuj videa z YouTube a stovek dalších zdrojů přes webové UI. Fronta, audio mód, paralelní stahování.",
     url: "https://github.com/MikiMaly/py_video_grabber",
-    icon: "/assets/video-grabber.png",
+    icon: "/assets/uvd-icon.png",
     tag: "python / yt-dlp",
     downloads: [
-      { label: "Windows", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest/download/UltimateVideoDownloader-v7.0-win64.zip" },
-      { label: "macOS",   url: "https://github.com/MikiMaly/py_video_grabber/releases/download/v7.0/UltimateVideoDownloader-v7-beta-macos.dmg" },
+      { label: "Windows EXE", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest" },
     ],
   },
 ];
