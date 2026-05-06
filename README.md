@@ -22,8 +22,7 @@ Hostováno na **Cloudflare Pages**. Privátní sekce chráněna heslem přes Clo
 │   └── api/
 │       ├── login.js        ← POST /api/login
 │       └── logout.js       ← POST /api/logout
-└── .github/workflows/
-    └── deploy.yml          ← Auto-deploy na push do main
+└── wrangler.toml           ← Cloudflare konfigurace
 ```
 
 ---
