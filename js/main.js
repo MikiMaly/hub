@@ -7,8 +7,8 @@ const PUBLIC_APPS = [
     icon: "/assets/uvd-icon.png",
     tag: "python / yt-dlp",
     downloads: [
-      { label: "Windows EXE", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest" },
-      { label: "macOS",       url: "https://github.com/MikiMaly/py_video_grabber/releases/latest" },
+      { label: "Windows EXE", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest/download/UltimateVideoDownloader-win64.zip" },
+      { label: "macOS",       url: "https://github.com/MikiMaly/py_video_grabber/releases/latest/download/UltimateVideoDownloader-macos.dmg" },
     ],
   },
 ];
