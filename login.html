@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Přihlášení — mmaly.cz</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</head>
+<body class="login-page">
+  <div class="login-wrapper">
+    <div class="login-card">
+      <a href="/" class="logo login-logo">mmaly<span class="logo-dot">.cz</span></a>
+      <h1 class="login-title">Přihlášení</h1>
+      <p class="login-sub">Pro přístup k privátním appkám zadej heslo.</p>
+
+      <form id="loginForm" class="login-form" novalidate>
+        <div class="field">
+          <label for="password" class="field-label">Heslo</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="field-input"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </div>
+        <div id="loginError" class="login-error" hidden>Nesprávné heslo. Zkus to znovu.</div>
+        <button type="submit" class="btn btn--full" id="submitBtn">Přihlásit se</button>
+      </form>
+
+      <a href="/" class="login-back">← Zpět na hlavní stránku</a>
+    </div>
+  </div>
+
+  <script src="/js/login.js"></script>
+</body>
+</html>
