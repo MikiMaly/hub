@@ -1,16 +1,3 @@
-let activeTab = 'password';
-
-function switchTab(tab) {
-  activeTab = tab;
-  document.getElementById('tabPassword').classList.toggle('active', tab === 'password');
-  document.getElementById('tabCode').classList.toggle('active', tab === 'code');
-  document.getElementById('fieldPassword').style.display = tab === 'password' ? '' : 'none';
-  document.getElementById('fieldCode').style.display = tab === 'code' ? '' : 'none';
-  document.getElementById('loginError').hidden = true;
-}
-
-document.getElementById('tabPassword').addEventListener('click', () => switchTab('password'));
-document.getElementById('tabCode').addEventListener('click', () => switchTab('code'));
 
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -22,7 +9,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   btn.textContent = 'Přihlašuji…';
   errEl.hidden = true;
 
-  const payload = activeTab === 'password'
+  const payload = (window._loginTab || 'password') === 'password'
     ? { password: document.getElementById('password').value }
     : { code: document.getElementById('code').value.trim().toUpperCase() };
 
@@ -41,7 +28,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
       if (res.status === 500) {
         errEl.textContent = data.error || 'Chyba serveru.';
       } else {
-        errEl.textContent = activeTab === 'password'
+        errEl.textContent = (window._loginTab || 'password') === 'password'
           ? 'Nesprávné heslo. Zkus to znovu.'
           : 'Neplatný kód pozvánky.';
       }

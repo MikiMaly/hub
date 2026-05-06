@@ -48,6 +48,19 @@
     </div>
   </div>
 
+  <script>
+    function switchTab(tab) {
+      window._loginTab = tab;
+      document.getElementById('tabPassword').classList.toggle('active', tab === 'password');
+      document.getElementById('tabCode').classList.toggle('active', tab === 'code');
+      document.getElementById('fieldPassword').style.display = tab === 'password' ? '' : 'none';
+      document.getElementById('fieldCode').style.display = tab === 'code' ? '' : 'none';
+      document.getElementById('loginError').hidden = true;
+    }
+    window._loginTab = 'password';
+    document.getElementById('tabPassword').addEventListener('click', () => switchTab('password'));
+    document.getElementById('tabCode').addEventListener('click', () => switchTab('code'));
+  </script>
   <script src="/js/login.js"></script>
 </body>
 </html>
