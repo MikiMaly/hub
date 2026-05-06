@@ -40,8 +40,13 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
+  const isAdmin = !!password;
   const headers = new Headers({ 'Content-Type': 'application/json' });
   headers.append('Set-Cookie', `hub_auth=1; Path=/; Max-Age=${maxAge}; ${secure}`);
   headers.append('Set-Cookie', `hub_ui=1; Path=/; Max-Age=${maxAge}; Secure; SameSite=Lax`);
+  if (isAdmin) {
+    headers.append('Set-Cookie', `hub_admin=1; Path=/; Max-Age=${maxAge}; ${secure}`);
+    headers.append('Set-Cookie', `hub_admin_ui=1; Path=/; Max-Age=${maxAge}; Secure; SameSite=Lax`);
+  }
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });
 }

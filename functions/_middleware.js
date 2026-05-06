@@ -7,11 +7,17 @@ export async function onRequest({ request, next }) {
 
   if (url.pathname.startsWith('/private')) {
     const cookie = request.headers.get('Cookie') || '';
-    const isAuth = cookie.split(';').some(c => c.trim() === 'hub_auth=1');
+    const cookies = cookie.split(';').map(c => c.trim());
+    const isAuth = cookies.some(c => c === 'hub_auth=1');
+    const isAdmin = cookies.some(c => c === 'hub_admin=1');
 
     if (!isAuth) {
       const loginUrl = `/login.html?from=${encodeURIComponent(url.pathname)}`;
       return Response.redirect(new URL(loginUrl, request.url), 302);
+    }
+
+    if (url.pathname.startsWith('/private/invites') && !isAdmin) {
+      return Response.redirect(new URL('/private/', request.url), 302);
     }
   }
 

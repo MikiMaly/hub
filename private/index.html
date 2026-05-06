@@ -39,7 +39,7 @@
     <section class="section">
       <div class="container">
         <div class="grid" id="privateGrid">
-          <a class="card card--link" href="/private/invites.html">
+          <a class="card card--link" href="/private/invites.html" id="adminCard" style="display:none">
             <div class="card-icon-wrap"><div class="card-icon">🔑</div></div>
             <h3 class="card-title">Správa pozvánek</h3>
             <p class="card-desc">Vytvárej a spravuj invite kódy pro přístup k privátní sekci.</p>
@@ -79,6 +79,8 @@
         window.location.href = '/';
       });
     });
+    function getCookie(n) { return document.cookie.split('; ').find(r => r.startsWith(n+'='))?.split('=')[1] || null; }
+    if (getCookie('hub_admin_ui') === '1') document.getElementById('adminCard').style.display = '';
   </script>
 </body>
 </html>
