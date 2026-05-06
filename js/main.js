@@ -8,6 +8,7 @@ const PUBLIC_APPS = [
     tag: "python / yt-dlp",
     downloads: [
       { label: "Windows EXE", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest" },
+      { label: "macOS",       url: "https://github.com/MikiMaly/py_video_grabber/releases/latest" },
     ],
   },
 ];
