@@ -8,28 +8,39 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    .login-tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #161b22; border-radius: 8px; padding: 4px; }
+    .login-tab  { flex: 1; padding: 8px; border: none; border-radius: 6px; background: transparent;
+                  color: #8b949e; font-size: 14px; font-family: inherit; cursor: pointer; transition: all .15s; }
+    .login-tab.active { background: #21262d; color: #f0f6fc; }
+    .login-tab:hover:not(.active) { color: #c9d1d9; }
+  </style>
 </head>
 <body class="login-page">
   <div class="login-wrapper">
     <div class="login-card">
       <a href="/" class="logo login-logo">mmaly<span class="logo-dot">.cz</span></a>
       <h1 class="login-title">Přihlášení</h1>
-      <p class="login-sub">Pro přístup k privátním appkám zadej heslo.</p>
+      <p class="login-sub">Pro přístup k privátním appkám.</p>
+
+      <div class="login-tabs">
+        <button class="login-tab active" id="tabPassword" onclick="switchTab('password')">Heslo</button>
+        <button class="login-tab" id="tabCode" onclick="switchTab('code')">Pozvánka</button>
+      </div>
 
       <form id="loginForm" class="login-form" novalidate>
-        <div class="field">
+        <div class="field" id="fieldPassword">
           <label for="password" class="field-label">Heslo</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            class="field-input"
-            placeholder="••••••••"
-            autocomplete="current-password"
-            required
-          />
+          <input type="password" id="password" name="password" class="field-input"
+            placeholder="••••••••" autocomplete="current-password" />
         </div>
-        <div id="loginError" class="login-error" hidden>Nesprávné heslo. Zkus to znovu.</div>
+        <div class="field" id="fieldCode" style="display:none">
+          <label for="code" class="field-label">Kód pozvánky</label>
+          <input type="text" id="code" name="code" class="field-input"
+            placeholder="ABCD-EF3G" autocomplete="off" spellcheck="false"
+            style="text-transform:uppercase;letter-spacing:2px" />
+        </div>
+        <div id="loginError" class="login-error" hidden></div>
         <button type="submit" class="btn btn--full" id="submitBtn">Přihlásit se</button>
       </form>
 
