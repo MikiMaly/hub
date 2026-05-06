@@ -1,12 +1,12 @@
 // Config — uprav dle potřeby
 const PUBLIC_APPS = [
-  // {
-  //   title: "Název appky",
-  //   desc: "Krátký popis co appka dělá.",
-  //   url: "https://app.mmaly.cz",
-  //   icon: "🚀",
-  //   tag: "python",
-  // },
+  {
+    title: "Video Grabber",
+    desc: "Stahuj videa z YouTube a dalších zdrojů přes jednoduché webové UI. Fronta, progress, paralelní stahování.",
+    url: "https://github.com/MikiMaly/py_video_grabber/releases/latest",
+    icon: "/assets/video-grabber.png",
+    tag: "python / yt-dlp",
+  },
 ];
 
 function getCookie(name) {
@@ -24,8 +24,11 @@ function makeCard(app) {
     a.target = '_blank';
     a.rel = 'noopener';
   }
+  const iconHtml = (app.icon && app.icon.startsWith('/'))
+    ? `<img src="${app.icon}" class="card-icon-img" alt="" />`
+    : `<div class="card-icon">${app.icon || '🔗'}</div>`;
   a.innerHTML = `
-    <div class="card-icon">${app.icon || '🔗'}</div>
+    <div class="card-icon-wrap">${iconHtml}</div>
     <h3 class="card-title">${app.title}</h3>
     <p class="card-desc">${app.desc || ''}</p>
     <div class="card-footer">

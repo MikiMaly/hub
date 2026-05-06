@@ -339,10 +339,18 @@ a:hover { text-decoration: underline; }
   opacity: .5;
 }
 
+.card-icon-wrap { margin-bottom: 4px; }
+
 .card-icon {
   font-size: 28px;
   line-height: 1;
-  margin-bottom: 4px;
+}
+
+.card-icon-img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  border-radius: 8px;
 }
 
 .card-title {
