@@ -1,6 +1,9 @@
 # TODO — mmaly.cz hub
 
 ## Aktivní
+- [ ] Zelená MM ikona webu (favicon) — svg/png ve stylu zeleného rebrandu
+
+
 - [ ] Napojit `uwd.mmaly.cz` — webapp pro online stahování videí (RPi4 + Cloudflare Tunnel)
 - [ ] Server mód webappu (v7.2) — stahování na server + HTTP download pro uživatele
 
