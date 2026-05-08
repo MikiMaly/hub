@@ -2,6 +2,35 @@ import { useState, useEffect, useCallback } from 'react'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 
+function TimezoneClock() {
+  const [now, setNow] = useState(new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  const fmt = (tz) => now.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', second: '2-digit', timeZone: tz })
+
+  const zones = [
+    { flag: '🇨🇿', label: 'CZ',  tz: 'Europe/Prague' },
+    { flag: '🌐',   label: 'UTC', tz: 'UTC' },
+    { flag: '🇺🇸', label: 'ET',  tz: 'America/New_York' },
+  ]
+
+  return (
+    <div className="tz-clock">
+      {zones.map(({ flag, label, tz }) => (
+        <div key={tz} className="tz-clock__zone">
+          <span className="tz-clock__flag">{flag}</span>
+          <span className="tz-clock__label">{label}</span>
+          <span className="tz-clock__time">{fmt(tz)}</span>
+        </div>
+      ))}
+      <div className="tz-clock__note">Polymarket zobrazuje časy v ET</div>
+    </div>
+  )
+}
+
 function Badge({ action }) {
   const map = {
     BUY_UP:   ['badge badge--up',   '🟢 BUY UP'],
@@ -129,6 +158,8 @@ export default function Polymarket() {
 
         <section className="section">
           <div className="container">
+
+            <TimezoneClock />
 
             <div className="section-label">
               <span className="live-dot" />

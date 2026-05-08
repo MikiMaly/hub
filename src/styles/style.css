@@ -1,3 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0e1a;
+  --color-foreground: #e5e7eb;
+  --color-card: #131825;
+  --color-card-foreground: #e5e7eb;
+  --color-primary: #22c55e;
+  --color-primary-foreground: #0a0e1a;
+  --color-secondary: #1a2332;
+  --color-secondary-foreground: #e5e7eb;
+  --color-muted: #1e293b;
+  --color-muted-foreground: #94a3b8;
+  --color-border: rgba(255,255,255,0.1);
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  --color-input-background: #1a2332;
+  --color-ring: #22c55e;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+}
+
 /* ---- Reset & Base ---- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -975,3 +999,30 @@ a:hover { text-decoration: underline; }
 .inv-form { display: flex; gap: 12px; margin-top: 32px; align-items: flex-end; }
 .inv-form .field { flex: 1; margin: 0; }
 .inv-empty { color: #8b949e; font-size: 14px; padding: 24px 0; }
+
+/* Timezone Clock */
+.tz-clock {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.tz-clock__zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: var(--bg-3);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.tz-clock__flag { font-size: 18px; line-height: 1; }
+.tz-clock__label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; min-width: 28px; }
+.tz-clock__time { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: var(--text); }
+.tz-clock__note { margin-left: auto; font-size: 11px; color: var(--text-muted); font-style: italic; align-self: center; }
