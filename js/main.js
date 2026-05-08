@@ -6,6 +6,7 @@ const PUBLIC_APPS = [
     url: "https://github.com/MikiMaly/py_video_grabber",
     icon: "/assets/uvd-icon.png",
     tag: "python / yt-dlp",
+    featured: true,
     downloads: [
       { label: "Windows EXE", url: "https://github.com/MikiMaly/py_video_grabber/releases/latest/download/UltimateVideoDownloader-win64.zip" },
       { label: "macOS",       url: "https://github.com/MikiMaly/py_video_grabber/releases/latest/download/UltimateVideoDownloader-macos.dmg" },
@@ -22,10 +23,16 @@ function getCookie(name) {
 
 function makeCard(app) {
   const card = document.createElement(app.downloads ? 'div' : 'a');
-  card.className = 'card' + (app.downloads ? '' : ' card--link');
+  card.className = 'card' + (app.downloads ? '' : ' card--link') + (app.featured ? ' card--featured' : '');
   if (!app.downloads) {
     card.href = app.url;
     if (app.external !== false) { card.target = '_blank'; card.rel = 'noopener'; }
+  }
+  if (app.featured) {
+    const badge = document.createElement('div');
+    badge.className = 'card-badge-featured';
+    badge.textContent = 'Featured';
+    card.appendChild(badge);
   }
 
   const iconHtml = (app.icon && app.icon.startsWith('/'))
@@ -63,23 +70,20 @@ function renderPublicApps() {
 }
 
 function checkAuth() {
-  const isLoggedIn = getCookie('hub_ui') === '1'; // hub_auth je HttpOnly, JS čte hub_ui
+  const isLoggedIn = getCookie('hub_ui') === '1';
   const adminLink = document.getElementById('adminLink');
-  const privateContent = document.getElementById('privateContent');
+  const privateCta = document.getElementById('privateCta');
 
   if (isLoggedIn) {
     if (adminLink) {
       adminLink.href = '/private/';
       adminLink.title = 'Privátní sekce';
     }
-    if (privateContent) {
-      privateContent.innerHTML = `
-        <div style="padding: 16px 0;">
-          <a href="/private/" class="btn btn--outline">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
-            Přejít do privátní sekce
-          </a>
-        </div>
+    if (privateCta) {
+      privateCta.href = '/private/';
+      privateCta.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+        Přejít do privátní sekce
       `;
     }
   }
