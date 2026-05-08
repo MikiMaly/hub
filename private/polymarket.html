@@ -306,11 +306,10 @@
                 <th>Signál</th>
                 <th>Confidence</th>
                 <th>Zdůvodnění</th>
-                <th>Navržený trh</th>
               </tr>
             </thead>
             <tbody id="signalsBody">
-              <tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">⏳</div>Načítám signály…</div></td></tr>
+              <tr><td colspan="5"><div class="empty-state"><div class="empty-state__icon">⏳</div>Načítám signály…</div></td></tr>
             </tbody>
           </table>
         </div>
@@ -409,7 +408,7 @@
     function renderTable(signals) {
       const tbody = document.getElementById('signalsBody');
       if (!signals.length) {
-        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">📭</div>Žádné signály pro tento filtr.</div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="empty-state__icon">📭</div>Žádné signály pro tento filtr.</div></td></tr>`;
         return;
       }
       tbody.innerHTML = signals.map(s => `
@@ -419,7 +418,6 @@
           <td>${badge(s.action)}</td>
           <td>${confidenceBar(s.confidence)}</td>
           <td><div class="reasoning">${s.reasoning || '—'}</div></td>
-          <td><span class="market-link">${s.suggested_market || '—'}</span></td>
         </tr>`).join('');
     }
 
