@@ -202,6 +202,14 @@
   </div>
 
   <script>
+    // Pokud je uživatel již přihlášen, přeskoč login
+    (function () {
+      const from = new URLSearchParams(window.location.search).get('from') || '/private/';
+      if (document.cookie.split(';').some(c => c.trim().startsWith('hub_ui=1'))) {
+        window.location.replace(from);
+      }
+    })();
+
     window._loginTab = 'password';
     function switchTab(tab) {
       window._loginTab = tab;

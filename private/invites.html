@@ -70,19 +70,12 @@
       fetch('/api/logout', { method: 'POST' }).then(() => { window.location.href = '/'; });
     });
 
-    function getAdminPw() {
-      const pw = sessionStorage.getItem('adminpw');
-      if (pw) return pw;
-      const input = prompt('Admin heslo:');
-      if (input) sessionStorage.setItem('adminpw', input);
-      return input;
-    }
-
     async function loadCodes() {
-      const pw = getAdminPw();
-      if (!pw) return;
-      const res = await fetch(`/api/invite?adminpw=${encodeURIComponent(pw)}`);
-      if (res.status === 403) { sessionStorage.removeItem('adminpw'); loadCodes(); return; }
+      const res = await fetch('/api/invite');
+      if (res.status === 403) {
+        document.getElementById('tableWrap').innerHTML = '<p class="inv-empty">Přístup odepřen — přihlaste se jako admin.</p>';
+        return;
+      }
       const codes = await res.json();
       const wrap = document.getElementById('tableWrap');
       if (codes.length === 0) {
@@ -103,7 +96,6 @@
     }
 
     async function createCode() {
-      const pw = getAdminPw();
       const label = document.getElementById('newLabel').value.trim();
       const errEl = document.getElementById('createError');
       const btn = document.getElementById('createBtn');
@@ -112,7 +104,7 @@
       const res = await fetch('/api/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminpw: pw, label }),
+        body: JSON.stringify({ label }),
       });
       btn.disabled = false;
       if (!res.ok) { errEl.textContent = 'Chyba.'; errEl.hidden = false; return; }
@@ -125,11 +117,10 @@
 
     async function deleteCode(code) {
       if (!confirm(`Smazat kód ${code}?`)) return;
-      const pw = getAdminPw();
       await fetch('/api/invite', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminpw: pw, code }),
+        body: JSON.stringify({ code }),
       });
       loadCodes();
     }
