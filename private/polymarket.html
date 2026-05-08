@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polymarket Bot — mmaly.cz</title>
+  <link rel="icon" type="image/png" href="/assets/favicon.png" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    .signal-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .signal-table th {
+      text-align: left;
+      padding: 10px 14px;
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid var(--border);
+    }
+    .signal-table td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    .signal-table tr:last-child td { border-bottom: none; }
+    .signal-table tr:hover td { background: var(--bg-3); }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .badge--up   { background: rgba(63,185,80,.15); color: var(--green); }
+    .badge--down { background: rgba(248,81,73,.15);  color: var(--red); }
+    .badge--skip { background: rgba(139,148,158,.12); color: var(--text-muted); }
+
+    .confidence-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .confidence-bar__track {
+      flex: 1;
+      height: 4px;
+      background: var(--bg-3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .confidence-bar__fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--accent);
+      transition: width .3s ease;
+    }
+    .confidence-bar__label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text-muted);
+      min-width: 34px;
+      text-align: right;
+    }
+
+    .reasoning { color: var(--text-muted); font-size: 13px; line-height: 1.5; max-width: 360px; }
+    .market-link { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
+
+    .price-cell { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+    .time-cell  { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+    .table-wrap {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .filter-btn:hover, .filter-btn.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(63,185,80,.08);
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+    }
+    .stat-card__label { font-size: 12px; color: var(--text-muted); margin-bottom: 6px; }
+    .stat-card__value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 500; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state__icon { font-size: 40px; margin-bottom: 16px; }
+
+    .refresh-info {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-left: auto;
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .section-title { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <a href="/" class="logo">mmaly<span class="logo-dot">.cz</span></a>
+      <nav class="nav">
+        <a href="/private/" class="nav-link">← Zpět</a>
+        <button class="nav-link nav-link--lock" id="logoutBtn" title="Odhlásit se">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <p class="hero-eyebrow">Privátní sekce</p>
+          <h1 class="hero-title">Polymarket Bot</h1>
+          <p class="hero-subtitle">Live BTC signály generované Gemini AI na základě technické analýzy.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+
+        <div class="stats-row" id="statsRow">
+          <div class="stat-card">
+            <div class="stat-card__label">Celkem signálů</div>
+            <div class="stat-card__value" id="statTotal">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__label">BUY UP</div>
+            <div class="stat-card__value" id="statUp" style="color:var(--green)">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__label">BUY DOWN</div>
+            <div class="stat-card__value" id="statDown" style="color:var(--red)">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__label">SKIP</div>
+            <div class="stat-card__value" id="statSkip" style="color:var(--text-muted)">—</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__label">Průměrná confidence</div>
+            <div class="stat-card__value" id="statAvgConf">—</div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <div class="filters">
+            <button class="filter-btn active" data-filter="all">Vše</button>
+            <button class="filter-btn" data-filter="BUY_UP">🟢 BUY UP</button>
+            <button class="filter-btn" data-filter="BUY_DOWN">🔴 BUY DOWN</button>
+            <button class="filter-btn" data-filter="SKIP">⚪ Skip</button>
+          </div>
+          <span class="refresh-info" id="refreshInfo">Načítám…</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="signal-table">
+            <thead>
+              <tr>
+                <th>Čas (UTC)</th>
+                <th>Cena BTC</th>
+                <th>Signál</th>
+                <th>Confidence</th>
+                <th>Zdůvodnění</th>
+                <th>Navržený trh</th>
+              </tr>
+            </thead>
+            <tbody id="signalsBody">
+              <tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">⏳</div>Načítám signály…</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <span class="footer-text">mmaly.cz</span>
+      <div class="footer-links">
+        <a href="https://github.com/MikiMaly" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    let allSignals = [];
+    let activeFilter = 'all';
+
+    function badge(action) {
+      const map = {
+        BUY_UP:   ['badge--up',   '🟢 BUY UP'],
+        BUY_DOWN: ['badge--down', '🔴 BUY DOWN'],
+        SKIP:     ['badge--skip', '⚪ SKIP'],
+      };
+      const [cls, label] = map[action] || ['badge--skip', action];
+      return `<span class="badge ${cls}">${label}</span>`;
+    }
+
+    function confidenceBar(conf) {
+      const pct = Math.round(conf * 100);
+      const color = pct >= 75 ? 'var(--green)' : pct >= 60 ? 'var(--accent)' : 'var(--text-muted)';
+      return `
+        <div class="confidence-bar">
+          <div class="confidence-bar__track">
+            <div class="confidence-bar__fill" style="width:${pct}%;background:${color}"></div>
+          </div>
+          <span class="confidence-bar__label">${pct}%</span>
+        </div>`;
+    }
+
+    function renderTable(signals) {
+      const tbody = document.getElementById('signalsBody');
+      if (!signals.length) {
+        tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><div class="empty-state__icon">📭</div>Žádné signály pro tento filtr.</div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = signals.map(s => `
+        <tr>
+          <td class="time-cell">${s.timestamp || '—'}</td>
+          <td class="price-cell">$${Number(s.btc_price).toLocaleString('cs-CZ')}</td>
+          <td>${badge(s.action)}</td>
+          <td>${confidenceBar(s.confidence)}</td>
+          <td><div class="reasoning">${s.reasoning || '—'}</div></td>
+          <td><span class="market-link">${s.suggested_market || '—'}</span></td>
+        </tr>`).join('');
+    }
+
+    function updateStats(signals) {
+      const up   = signals.filter(s => s.action === 'BUY_UP').length;
+      const down = signals.filter(s => s.action === 'BUY_DOWN').length;
+      const skip = signals.filter(s => s.action === 'SKIP').length;
+      const actionable = signals.filter(s => s.action !== 'SKIP');
+      const avgConf = actionable.length
+        ? Math.round(actionable.reduce((a, s) => a + s.confidence, 0) / actionable.length * 100) + '%'
+        : '—';
+      document.getElementById('statTotal').textContent = signals.length;
+      document.getElementById('statUp').textContent = up;
+      document.getElementById('statDown').textContent = down;
+      document.getElementById('statSkip').textContent = skip;
+      document.getElementById('statAvgConf').textContent = avgConf;
+    }
+
+    function applyFilter() {
+      const filtered = activeFilter === 'all'
+        ? allSignals
+        : allSignals.filter(s => s.action === activeFilter);
+      renderTable(filtered);
+    }
+
+    async function loadSignals() {
+      try {
+        const res = await fetch('/api/signals');
+        if (!res.ok) throw new Error(res.status);
+        allSignals = await res.json();
+        updateStats(allSignals);
+        applyFilter();
+        document.getElementById('refreshInfo').textContent =
+          'Aktualizováno ' + new Date().toLocaleTimeString('cs-CZ');
+      } catch (e) {
+        document.getElementById('refreshInfo').textContent = 'Chyba načítání';
+      }
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        applyFilter();
+      });
+    });
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      fetch('/api/logout', { method: 'POST' }).then(() => { window.location.href = '/'; });
+    });
+
+    loadSignals();
+    setInterval(loadSignals, 60_000);
+  </script>
+</body>
+</html>

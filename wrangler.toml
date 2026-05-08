@@ -13,3 +13,11 @@ pages_build_output_dir = "."
 [[kv_namespaces]]
 binding = "INVITES"
 id = "816e5069367440448a280e591a827046"
+
+# KV namespace pro Polymarket bot signály
+# POZOR: vytvoř namespace v Cloudflare dashboard → Workers & Pages → KV → "HUB_SIGNALS"
+# Pak zkopíruj ID sem a nastav binding v Pages projektu jako "SIGNALS"
+# Nastav secret BOT_SECRET v Pages projektu (libovolný dlouhý řetězec)
+[[kv_namespaces]]
+binding = "SIGNALS"
+id = "DOPLNIT_PO_VYTVORENI_KV"
