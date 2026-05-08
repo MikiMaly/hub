@@ -14,7 +14,14 @@ function getCookie(name) {
 
 function timeAgo(timestamp) {
   if (!timestamp) return '—'
-  const date = new Date(timestamp.replace(' ', 'T') + 'Z')
+  let date
+  if (typeof timestamp === 'number') {
+    date = new Date(timestamp > 1e10 ? timestamp : timestamp * 1000)
+  } else {
+    const s = String(timestamp).trim()
+    date = new Date(/[TZ]/i.test(s) ? s : s.replace(' ', 'T') + 'Z')
+  }
+  if (isNaN(date.getTime())) return '—'
   const diff = Math.floor((Date.now() - date) / 1000)
   if (diff < 60) return `${diff}s ago`
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`

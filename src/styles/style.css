@@ -57,8 +57,10 @@ body {
 
 main { flex: 1; }
 
-a { color: var(--accent); text-decoration: none; }
-a:hover { text-decoration: underline; }
+@layer base {
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+}
 
 /* ---- Layout ---- */
 .container {
