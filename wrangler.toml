@@ -2,9 +2,6 @@ name = "mmaly-hub"
 compatibility_date = "2024-09-23"
 pages_build_output_dir = "dist"
 
-[build]
-command = "npm run build"
-
 [vars]
 # Non-secret variables here
 # HUB_PASSWORD is set as a Secret in Cloudflare Pages dashboard
