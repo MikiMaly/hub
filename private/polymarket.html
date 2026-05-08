@@ -10,6 +10,87 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <style>
+    /* Sledované trhy — live Polymarket panel */
+    .markets-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .market-card {
+      background: var(--bg-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+    .market-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--accent);
+      border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .market-card__label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .market-card__question {
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.5;
+      margin-bottom: 16px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .market-card__prices {
+      display: flex;
+      gap: 20px;
+    }
+    .market-price {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .market-price__label { font-size: 11px; color: var(--text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: .05em; }
+    .market-price__value { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; }
+    .market-price__value--yes { color: var(--green); }
+    .market-price__value--no  { color: var(--red); }
+    .market-card__footer {
+      margin-top: 14px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .market-card--loading { opacity: .5; }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .live-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(.7); }
+    }
+
     .signal-table { width: 100%; border-collapse: collapse; font-size: 14px; }
     .signal-table th {
       text-align: left;
@@ -158,13 +239,30 @@
         <div class="hero-content">
           <p class="hero-eyebrow">Privátní sekce</p>
           <h1 class="hero-title">Polymarket Bot</h1>
-          <p class="hero-subtitle">Live BTC signály generované Gemini AI na základě technické analýzy.</p>
+          <p class="hero-subtitle">Live BTC signály generované OpenRouter AI na základě technické analýzy + Polymarket YES/NO cen.</p>
         </div>
       </div>
     </section>
 
     <section class="section">
       <div class="container">
+
+        <!-- Sledované Polymarket trhy — live -->
+        <div class="section-label">
+          <span class="live-dot"></span>
+          Sledované trhy
+          <span id="marketsRefreshInfo" style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text-muted);margin-left:auto"></span>
+        </div>
+        <div class="markets-grid" id="marketsGrid">
+          <div class="market-card market-card--loading">
+            <div class="market-card__label">5 min</div>
+            <div class="market-card__question">Načítám…</div>
+          </div>
+          <div class="market-card market-card--loading">
+            <div class="market-card__label">15 min</div>
+            <div class="market-card__question">Načítám…</div>
+          </div>
+        </div>
 
         <div class="stats-row" id="statsRow">
           <div class="stat-card">
@@ -233,6 +331,58 @@
   <script>
     let allSignals = [];
     let activeFilter = 'all';
+
+    // ── Polymarket live markets ──────────────────────────────────────────────
+
+    function renderMarkets(markets) {
+      const grid = document.getElementById('marketsGrid');
+      if (!markets.length) {
+        grid.innerHTML = `<div class="market-card"><div class="market-card__question" style="color:var(--text-muted)">Žádné aktivní BTC Up/Down trhy.</div></div>`;
+        return;
+      }
+      grid.innerHTML = markets.map(m => {
+        const labelMap = { 'btc-updown-5m': '5 min', 'btc-updown-15m': '15 min' };
+        const labelKey = m.slug.startsWith('btc-updown-5m') ? 'btc-updown-5m' : 'btc-updown-15m';
+        const label = labelMap[labelKey] || labelKey;
+        const yesVal = m.yes != null ? (m.yes * 100).toFixed(1) + '%' : '—';
+        const noVal  = m.no  != null ? (m.no  * 100).toFixed(1) + '%' : '—';
+        const endStr = m.end_date
+          ? new Date(m.end_date).toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit', timeZone: 'UTC' }) + ' UTC'
+          : '';
+        const statusDot = m.active
+          ? '<span class="live-dot" style="display:inline-block;vertical-align:middle;margin-right:4px"></span>'
+          : '';
+        return `
+          <div class="market-card">
+            <div class="market-card__label">${statusDot}${label}</div>
+            <div class="market-card__question">${m.question}</div>
+            <div class="market-card__prices">
+              <div class="market-price">
+                <span class="market-price__label">YES</span>
+                <span class="market-price__value market-price__value--yes">${yesVal}</span>
+              </div>
+              <div class="market-price">
+                <span class="market-price__label">NO</span>
+                <span class="market-price__value market-price__value--no">${noVal}</span>
+              </div>
+            </div>
+            ${endStr ? `<div class="market-card__footer">Expirace: ${endStr}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    async function loadMarkets() {
+      try {
+        const res = await fetch('/api/polymarket');
+        if (!res.ok) throw new Error(res.status);
+        const data = await res.json();
+        renderMarkets(data.markets || []);
+        document.getElementById('marketsRefreshInfo').textContent =
+          'Aktualizováno ' + new Date().toLocaleTimeString('cs-CZ');
+      } catch (e) {
+        document.getElementById('marketsRefreshInfo').textContent = 'Chyba načítání';
+      }
+    }
 
     function badge(action) {
       const map = {
@@ -323,7 +473,9 @@
     });
 
     loadSignals();
+    loadMarkets();
     setInterval(loadSignals, 60_000);
+    setInterval(loadMarkets, 60_000);
   </script>
 </body>
 </html>
