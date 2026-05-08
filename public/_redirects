@@ -1,0 +1,5 @@
+/login.html /login 301
+/private/index.html /private 301
+/private/invites.html /private/invites 301
+/private/polymarket.html /private/polymarket 301
+/* /index.html 200
