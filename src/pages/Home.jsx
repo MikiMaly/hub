@@ -85,7 +85,7 @@ export default function Home() {
           mixBlendMode: 'overlay',
         }} />
 
-        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="max-w-7xl mx-auto px-6 pt-32 pb-20 relative z-10">
+        <motion.div style={{ y: heroY, opacity: heroOpacity }} className="max-w-6xl mx-auto px-6 pt-32 pb-20 relative z-10">
           <div className="text-center max-w-5xl mx-auto">
             <motion.div
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
@@ -185,7 +185,7 @@ export default function Home() {
 
       {/* Public Projects */}
       <section className="py-32 px-6 relative">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="mb-20 text-center"
@@ -207,7 +207,7 @@ export default function Home() {
                 initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: index * 0.1, duration: 0.5 }}
                 whileHover={{ y: -12, scale: 1.02 }}
-                className="group relative"
+                className={`group relative${project.featured ? ' md:col-span-2 lg:col-span-2' : ''}`}
               >
                 <div className={`absolute -inset-0.5 bg-gradient-to-r ${project.gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 <div className="relative p-8 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all overflow-hidden h-full flex flex-col">
@@ -285,7 +285,7 @@ export default function Home() {
           mixBlendMode: 'overlay',
         }} />
 
-        <div className="max-w-7xl mx-auto relative z-10">
+        <div className="max-w-6xl mx-auto relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
             className="mb-20 text-center"

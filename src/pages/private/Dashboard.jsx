@@ -100,7 +100,7 @@ export default function Dashboard() {
 
       {/* Hero */}
       <section className="pt-32 pb-12 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-center gap-3 mb-4">
               <Lock className="w-8 h-8 text-primary" />
@@ -115,7 +115,7 @@ export default function Dashboard() {
 
       {/* Stats */}
       <section className="py-8 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, i) => (
               <motion.div
@@ -141,7 +141,7 @@ export default function Dashboard() {
 
       {/* Main content */}
       <section className="py-12 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="grid lg:grid-cols-3 gap-8">
 
             {/* Projects */}
