@@ -30,15 +30,21 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
       animate={{ y: 0 }}
       className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-border"
     >
-      <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
-        <motion.div whileHover={{ scale: 1.05 }}>
-          <Link to="/" className="flex items-center gap-1 no-underline">
-            <span className="font-mono text-xl font-medium text-foreground">mmaly</span>
-            <span className="font-mono text-xl font-semibold text-primary">.cz</span>
+      <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
+        <motion.div
+          className="flex items-center gap-2 cursor-pointer group"
+          whileHover={{ scale: 1.05 }}
+        >
+          <Link to="/" className="flex items-center gap-2 no-underline">
+            <div className="relative">
+              <div className="absolute inset-0 blur-xl bg-primary/30 group-hover:bg-primary/50 transition-all" />
+              <span className="text-2xl font-medium text-foreground relative z-10">mmaly</span>
+            </div>
+            <span className="text-2xl font-semibold text-primary">.cz</span>
           </Link>
         </motion.div>
 
-        <nav className="flex items-center gap-3">
+        <nav className="flex items-center gap-4">
           {backTo && (
             <Link
               to={backTo}
@@ -55,7 +61,7 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
               rel="noopener noreferrer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-secondary hover:bg-muted transition-colors text-sm no-underline text-foreground border border-border"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-secondary/50 hover:bg-muted transition-colors text-sm no-underline text-foreground backdrop-blur-sm"
             >
               <Github />
               GitHub
@@ -75,7 +81,7 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to={isLoggedIn ? '/private' : '/login'}
-                className="flex p-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/30 no-underline"
+                className="flex p-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 no-underline"
               >
                 <Lock className="w-5 h-5 text-primary" />
               </Link>

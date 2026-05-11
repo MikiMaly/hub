@@ -10,8 +10,8 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto text-center relative z-10">
         <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}>
           <div className="flex items-center justify-center gap-1 mb-3">
-            <span className="font-mono text-2xl font-semibold text-foreground">mmaly</span>
-            <span className="font-mono text-2xl font-bold text-primary">.cz</span>
+            <span className="text-3xl font-semibold text-foreground">mmaly</span>
+            <span className="text-3xl font-bold text-primary">.cz</span>
           </div>
           <p className="text-muted-foreground text-sm">© 2026 Mikoláš Malý.</p>
         </motion.div>
