@@ -120,7 +120,7 @@ export default function Home() {
 
             <motion.div
               initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.6 }}
-              className="flex flex-wrap items-center justify-center gap-4 mb-16"
+              className="flex flex-wrap items-center justify-center gap-6 mb-16"
             >
               <motion.a
                 href="https://github.com/MikiMaly"
@@ -128,7 +128,7 @@ export default function Home() {
                 rel="noopener noreferrer"
                 whileHover={{ scale: 1.05, boxShadow: '0 0 30px rgba(34,197,94,0.3)' }}
                 whileTap={{ scale: 0.95 }}
-                className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 no-underline font-medium"
+                className="group flex items-center gap-3 px-8 py-4 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 transition-all shadow-lg shadow-primary/20 no-underline font-semibold"
               >
                 <Github />
                 Prozkoumat GitHub
@@ -139,9 +139,9 @@ export default function Home() {
                 onClick={() => navigate(isLoggedIn ? '/private' : '/login')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center gap-3 px-8 py-4 rounded-xl bg-secondary/50 hover:bg-muted transition-all backdrop-blur-sm border border-border font-medium"
+                className="flex items-center gap-3 px-8 py-4 rounded-xl bg-secondary hover:bg-muted transition-all border-2 border-border hover:border-primary/40 font-semibold"
               >
-                <Lock className="w-5 h-5" />
+                <Lock className="w-5 h-5 text-primary" />
                 {isLoggedIn ? 'Privátní sekce' : 'Privátní projekty'}
               </motion.button>
             </motion.div>

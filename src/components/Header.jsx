@@ -30,19 +30,19 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
       animate={{ y: 0 }}
       className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-border"
     >
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
         <motion.div whileHover={{ scale: 1.05 }}>
           <Link to="/" className="flex items-center gap-1 no-underline">
-            <span className="font-mono text-lg font-medium text-foreground">mmaly</span>
-            <span className="font-mono text-lg font-semibold text-primary">.cz</span>
+            <span className="font-mono text-xl font-medium text-foreground">mmaly</span>
+            <span className="font-mono text-xl font-semibold text-primary">.cz</span>
           </Link>
         </motion.div>
 
-        <nav className="flex items-center gap-2">
+        <nav className="flex items-center gap-3">
           {backTo && (
             <Link
               to={backTo}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm no-underline"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm no-underline"
             >
               <ArrowLeft className="w-4 h-4" />
               {backLabel || 'Zpět'}
@@ -55,9 +55,9 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
               rel="noopener noreferrer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/50 hover:bg-muted transition-colors text-sm no-underline text-foreground"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-secondary hover:bg-muted transition-colors text-sm no-underline text-foreground border border-border"
             >
-              <Github className="w-4 h-4" />
+              <Github />
               GitHub
             </motion.a>
           )}
@@ -66,7 +66,7 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
               onClick={logout}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors text-sm"
               title="Odhlásit se"
             >
               <LogOut className="w-4 h-4" />
@@ -75,9 +75,9 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Link
                 to={isLoggedIn ? '/private' : '/login'}
-                className="flex p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 no-underline"
+                className="flex p-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/30 no-underline"
               >
-                <Lock className="w-4 h-4 text-primary" />
+                <Lock className="w-5 h-5 text-primary" />
               </Link>
             </motion.div>
           )}
