@@ -12,6 +12,7 @@ import {
   Terminal,
   Zap,
 } from 'lucide-react'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 type DownloadLink = { label: string; url: string }
 
@@ -90,6 +91,7 @@ function ProjectIcon({ project }: { project: Project }) {
 }
 
 export default function HomePage() {
+  useDocumentTitle('mmaly.cz — projekty & appky')
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const { scrollYProgress } = useScroll({

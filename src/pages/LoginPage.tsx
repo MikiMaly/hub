@@ -3,10 +3,12 @@ import { useNavigate, useSearchParams } from 'react-router'
 import { motion } from 'motion/react'
 import { ArrowLeft, Eye, EyeOff, Lock, Shield } from 'lucide-react'
 import { isAuthed } from '../lib/auth'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 type Tab = 'password' | 'code'
 
 export default function LoginPage() {
+  useDocumentTitle('Přihlášení — mmaly.cz')
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState<Tab>('password')

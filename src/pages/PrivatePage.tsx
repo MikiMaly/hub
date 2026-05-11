@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import { ArrowRight, ExternalLink, Github, Key, Lock, LogOut } from 'lucide-react'
 import { isAdmin, isAuthed, logout } from '../lib/auth'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 type ProjectCard = {
   id: string
@@ -16,6 +17,7 @@ type ProjectCard = {
 }
 
 export default function PrivatePage() {
+  useDocumentTitle('Privátní — mmaly.cz')
   const navigate = useNavigate()
   const [ready, setReady] = useState(false)
   const [admin, setAdmin] = useState(false)

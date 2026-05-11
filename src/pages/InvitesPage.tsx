@@ -11,6 +11,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { isAdmin, isAuthed, logout } from '../lib/auth'
+import { useDocumentTitle } from '../lib/useDocumentTitle'
 
 type InviteCode = {
   code: string
@@ -19,6 +20,7 @@ type InviteCode = {
 }
 
 export default function InvitesPage() {
+  useDocumentTitle('Pozvánky — mmaly.cz')
   const navigate = useNavigate()
   const [ready, setReady] = useState(false)
   const [codes, setCodes] = useState<InviteCode[]>([])
