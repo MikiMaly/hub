@@ -36,8 +36,8 @@
 - [ ] Refactor opakujících se patternů do `<Card>` a `<NoiseTextureBg>` (až budou víc než 4 stránky)
 
 ### SEO / observability
-- [ ] `public/robots.txt` (Allow `/`, Disallow `/private/*`) + `public/sitemap.xml`
-- [ ] Cloudflare Web Analytics snippet (privacy-first, no cookies)
+- [ ] Cloudflare Web Analytics snippet (privacy-first, no cookies) — registrovat v dashboardu, snippet do `index.html`
+- [ ] Aktualizovat `public/sitemap.xml` `lastmod` při větších změnách (manuálně nebo přes build skript)
 
 ## Nápady / budoucnost
 - [ ] Invite kódy — single-use varianta (kód se po použití invaliduje)
