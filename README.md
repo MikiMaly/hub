@@ -2,27 +2,57 @@
 
 Osobní landing page na [mmaly.cz](https://mmaly.cz) s rozcestníkem na projekty a webové appky.
 
-Hostováno na **Cloudflare Pages**. Privátní sekce chráněna heslem přes Cloudflare Pages Functions.
+Hostováno na **Cloudflare Pages**. Stack: **React + Vite + TypeScript + Tailwind 4 + Framer Motion**. Privátní sekce chráněna heslem přes Cloudflare Pages Functions a invite-kód systém v KV.
 
 ---
 
 ## Struktura
 
 ```
-├── index.html              ← Hlavní landing page (veřejná)
-├── login.html              ← Přihlašovací stránka
+├── src/
+│   ├── pages/
+│   │   ├── HomePage.tsx       ← Hlavní landing — UPRAV ZDE pro projekty
+│   │   ├── LoginPage.tsx      ← /login (heslo + invite kód)
+│   │   ├── PrivatePage.tsx    ← /private (chráněná sekce)
+│   │   └── InvitesPage.tsx    ← /private/invites (admin)
+│   ├── lib/auth.ts            ← cookie helpers (getCookie, isAuthed, isAdmin)
+│   ├── styles/                ← Tailwind + design tokens
+│   ├── routes.tsx             ← React Router config
+│   ├── App.tsx, main.tsx
+├── public/
+│   ├── _redirects             ← SPA fallback /* → /index.html 200
+│   ├── favicon.png
+│   └── uvd-icon.png
 ├── private/
-│   └── index.html          ← Privátní sekce (chráněná)
-├── css/style.css
-├── js/
-│   ├── main.js             ← Seznam appek — UPRAV ZDE
-│   └── login.js
+│   └── polymarket.html        ← stará HTML stránka (port do React: TODO)
 ├── functions/
-│   ├── _middleware.js      ← Chrání /private/* (server-side)
+│   ├── _middleware.js         ← Chrání /private/* (server-side cookie check)
 │   └── api/
-│       ├── login.js        ← POST /api/login
-│       └── logout.js       ← POST /api/logout
-└── wrangler.toml           ← Cloudflare konfigurace
+│       ├── login.js           ← POST /api/login {password|code} → set-cookie
+│       ├── logout.js          ← POST /api/logout
+│       ├── invite.js          ← GET/POST/DELETE /api/invite (KV-backed)
+│       ├── polymarket.js
+│       └── signals.js
+├── index.html                 ← SPA shell
+├── package.json, vite.config.ts, tsconfig*.json
+└── wrangler.toml              ← pages_build_output_dir = "dist"
+```
+
+---
+
+## Lokální vývoj
+
+```bash
+npm install
+npm run dev               # Vite na http://localhost:5173 (jen UI, bez API)
+```
+
+Pro lokální test **s Functions** (login, invite, KV):
+
+```bash
+npm run build
+echo "HUB_PASSWORD=moje-heslo" > .dev.vars
+npx wrangler pages dev dist     # http://localhost:8788
 ```
 
 ---
@@ -30,129 +60,78 @@ Hostováno na **Cloudflare Pages**. Privátní sekce chráněna heslem přes Clo
 ## Přidání appky
 
 ### Veřejná appka
-Otevři `js/main.js` a přidej do pole `PUBLIC_APPS`:
+Otevři [`src/pages/HomePage.tsx`](src/pages/HomePage.tsx) a přidej do pole `projects`:
 
-```js
+```tsx
 {
-  title: "Název appky",
-  desc: "Co appka dělá.",
-  url: "https://app.mmaly.cz",
-  icon: "🚀",     // emoji nebo text
-  tag: "python",  // technologie / label
+  id: 99,
+  icon: '🚀',                       // emoji nebo '/cesta-k-ikoně.png'
+  iconType: 'emoji',                // 'emoji' | 'image'
+  title: 'Název appky',
+  description: 'Co appka dělá.',
+  tags: ['python'],
+  status: 'public',
+  gradient: 'from-blue-500/20 to-cyan-500/20',
+  href: 'https://github.com/user/repo',
+  downloads: [
+    { label: 'Windows EXE', url: 'https://.../app-win64.zip' },
+  ],
 }
 ```
 
 ### Privátní appka
-Otevři `private/index.html` a přidej HTML kartu do `<div id="privateGrid">`:
-
-```html
-<a href="https://privatni.mmaly.cz" class="card card--link" target="_blank" rel="noopener">
-  <div class="card-icon">🔒</div>
-  <h3 class="card-title">Název</h3>
-  <p class="card-desc">Popis appky.</p>
-  <div class="card-footer">
-    <span class="card-tag">python</span>
-    <svg class="card-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M5 12h14M12 5l7 7-7 7"/>
-    </svg>
-  </div>
-</a>
-```
+Otevři [`src/pages/PrivatePage.tsx`](src/pages/PrivatePage.tsx) a přidej do pole `cards`.
 
 ---
 
-## Nasazení: krok za krokem
+## Nasazení
 
 ### 1. Cloudflare Pages projekt
 
-1. Jdi na **[dash.cloudflare.com](https://dash.cloudflare.com)** → Workers & Pages → **Create**
-2. Záložka **Pages** → **Connect to Git** → vyber `MikiMaly/hub`
-3. Build settings:
-   - Framework preset: `None`
-   - Build command: *(prázdné)*
-   - Build output directory: `/` nebo `.` (prázdné)
-4. Klikni **Save and Deploy** — první deploy proběhne z `main` větve
+1. **[dash.cloudflare.com](https://dash.cloudflare.com)** → Workers & Pages → **Create** → **Pages** → **Connect to Git** → `MikiMaly/hub`
+2. Build settings:
+   - **Framework preset:** Vite (nebo None)
+   - **Build command:** `npm run build`
+   - **Build output directory:** `dist` (přepíše to i `wrangler.toml`)
+   - **Node version:** `20` (přidej env var `NODE_VERSION=20`)
 
-### 2. Nastavení hesla (Secret)
+### 2. Secret + KV bindings
 
-V Cloudflare Pages projektu → **Settings → Environment variables**:
+V Pages projektu → **Settings → Environment variables**:
 
-| Variable name | Type | Value |
+| Variable | Type | Value |
 |---|---|---|
-| `HUB_PASSWORD` | **Secret** | tvoje heslo |
+| `HUB_PASSWORD` | Secret | tvoje admin heslo |
+| `NODE_VERSION` | Plain | `20` |
+| `BOT_SECRET` | Secret | (pro Polymarket bot) |
 
-Nastav pro obě prostředí (Production + Preview).
+KV bindings (`Settings → Functions → KV namespace bindings`):
+
+| Binding name | KV namespace |
+|---|---|
+| `INVITES` | HUB_INVITES |
+| `SIGNALS` | HUB_SIGNALS |
 
 ### 3. Doména mmaly.cz
 
-> Předpoklad: doména mmaly.cz je přidána v Cloudflare jako zóna (Nameservery přesměrovány na Cloudflare).
-
-1. V Pages projektu → **Custom domains** → **Set up a custom domain**
-2. Zadej `mmaly.cz` → Cloudflare automaticky přidá DNS záznamy
-3. Přidej i `www.mmaly.cz` a nastav redirect `www` → `mmaly.cz`:
-   - DNS → přidej CNAME: `www` → `mmaly.cz` (proxied)
-   - Rules → Redirect Rules → `www.mmaly.cz/*` → `https://mmaly.cz/$1` (301)
-
-### 4. Subdomény pro jednotlivé appky
-
-Každá appka žije ve svém vlastním Cloudflare Pages projektu (nebo Workers).
-Subdoména se nastaví jednoduše:
-
-**A) Appka je na Cloudflare Pages:**
-1. V Pages projektu té appky → **Custom domains** → přidej `appka.mmaly.cz`
-2. Cloudflare automaticky přidá CNAME záznam
-
-**B) Appka běží jinde (VPS, Railway, Render...):**
-1. DNS v Cloudflare → **Add record**:
-   ```
-   Type:  CNAME
-   Name:  appka
-   Target: appka.railway.app   (nebo jiný hostname)
-   Proxy: záleží — pokud chceš Cloudflare proxy (ochrana/cache), zapni; jinak vypni
-   ```
-
-**Příklady subdomén:**
-```
-mmaly.cz          → hub (tento repo)
-chat.mmaly.cz     → chat appka
-admin.mmaly.cz    → admin panel (privátní)
-api.mmaly.cz      → backend API
-```
-
-### 5. GitHub Secrets pro Actions deploy
-
-Settings → Secrets and variables → Actions → New repository secret:
-
-| Secret | Kde ho najdeš |
-|---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare → My Profile → API Tokens → Create Token → template "Edit Cloudflare Pages" |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare Dashboard → pravý sidebar → Account ID |
-
----
-
-## Lokální vývoj
-
-```bash
-# Vytvoř soubor s heslem (není v gitu)
-echo "HUB_PASSWORD=moje-heslo" > .dev.vars
-
-# Spusť lokální server s Functions
-npx wrangler pages dev .
-```
-
-Otevři [http://localhost:8788](http://localhost:8788).
+V Pages projektu → **Custom domains** → přidej `mmaly.cz` (a `www.mmaly.cz` s redirectem).
 
 ---
 
 ## Auth architektura
 
 ```
-Přihlášení → POST /api/login → nastaví 2 cookies:
-  hub_auth=1  (HttpOnly)  → čte middleware, chrání /private/*
-  hub_ui=1    (JS-readable) → čte main.js, zobrazí admin odkaz v UI
+POST /api/login {password}   → admin
+POST /api/login {code}       → invite code (KV lookup)
+                ↓ úspěch nastaví:
+                  hub_auth=1       (HttpOnly)  — middleware gate
+                  hub_ui=1         (JS read)   — client UX gate
+                  hub_admin=1      (HttpOnly)  — admin gate (jen pro password login)
+                  hub_admin_ui=1   (JS read)   — admin UI hint
 
-Middleware (_middleware.js) → při každém requestu na /private/*
-  zkontroluje hub_auth cookie (server-side)
-  → pokud chybí: redirect na /login.html
-  → pokud existuje: propustí dál
+functions/_middleware.js → /private/*
+  - bez hub_auth → 302 /login?from=...
+  - /private/invites bez hub_admin → 302 /private
 ```
+
+Klientský guard (`src/lib/auth.ts`) čte `hub_ui` / `hub_admin_ui` pro UX. Reálný gate je server middleware.

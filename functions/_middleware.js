@@ -12,7 +12,7 @@ export async function onRequest({ request, next }) {
     const isAdmin = cookies.some(c => c === 'hub_admin=1');
 
     if (!isAuth) {
-      const loginUrl = `/login.html?from=${encodeURIComponent(url.pathname)}`;
+      const loginUrl = `/login?from=${encodeURIComponent(url.pathname)}`;
       return Response.redirect(new URL(loginUrl, request.url), 302);
     }
 
