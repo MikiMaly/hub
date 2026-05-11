@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { Lock, LogOut, ArrowLeft } from 'lucide-react'
 
@@ -25,34 +25,38 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
   }
 
   return (
-    <motion.header
+    <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-border"
+      className="fixed top-0 left-0 right-0 z-50 bg-background/60 backdrop-blur-2xl border-b border-border/50"
     >
-      <div className="max-w-7xl mx-auto px-8 py-5 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+
+        {/* Logo — exact Figma design */}
         <motion.div
           className="flex items-center gap-2 cursor-pointer group"
+          onClick={() => navigate('/')}
           whileHover={{ scale: 1.05 }}
         >
-          <Link to="/" className="flex items-center gap-2 no-underline">
-            <div className="relative">
-              <div className="absolute inset-0 blur-xl bg-primary/30 group-hover:bg-primary/50 transition-all" />
-              <span className="text-2xl font-medium text-foreground relative z-10">mmaly</span>
-            </div>
-            <span className="text-2xl font-semibold text-primary">.cz</span>
-          </Link>
+          <div className="relative">
+            <div className="absolute inset-0 blur-xl bg-primary/30 group-hover:bg-primary/50 transition-all" />
+            <span className="text-xl relative z-10 text-foreground">mmaly</span>
+          </div>
+          <span className="text-xl text-primary font-semibold">.cz</span>
         </motion.div>
 
-        <nav className="flex items-center gap-4">
+        {/* Nav — right side */}
+        <div className="flex items-center gap-4">
           {backTo && (
-            <Link
-              to={backTo}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm no-underline"
+            <motion.button
+              onClick={() => navigate(backTo)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-sm"
             >
               <ArrowLeft className="w-4 h-4" />
               {backLabel || 'Zpět'}
-            </Link>
+            </motion.button>
           )}
           {showGithub && (
             <motion.a
@@ -61,10 +65,10 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
               rel="noopener noreferrer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-secondary/50 hover:bg-muted transition-colors text-sm no-underline text-foreground backdrop-blur-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary/50 hover:bg-muted transition-colors backdrop-blur-sm no-underline text-foreground text-sm"
             >
               <Github />
-              GitHub
+              <span>GitHub</span>
             </motion.a>
           )}
           {showLogout ? (
@@ -72,23 +76,24 @@ export default function Header({ backTo, backLabel, showGithub = false, showLogo
               onClick={logout}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors text-sm"
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors text-sm"
               title="Odhlásit se"
             >
               <LogOut className="w-4 h-4" />
             </motion.button>
           ) : (
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Link
-                to={isLoggedIn ? '/private' : '/login'}
-                className="flex p-2.5 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20 no-underline"
-              >
-                <Lock className="w-5 h-5 text-primary" />
-              </Link>
-            </motion.div>
+            <motion.button
+              onClick={() => navigate(isLoggedIn ? '/private' : '/login')}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="p-2 rounded-lg bg-primary/10 hover:bg-primary/20 transition-colors border border-primary/20"
+            >
+              <Lock className="w-4 h-4 text-primary" />
+            </motion.button>
           )}
-        </nav>
+        </div>
+
       </div>
-    </motion.header>
+    </motion.nav>
   )
 }
