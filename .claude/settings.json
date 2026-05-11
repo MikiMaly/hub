@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Remove-Item \"c:\\\\Users\\\\mikim\\\\hub\\\\assets\\\\video-grabber.png\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh repo *)",
+      "PowerShell(gh repo view MikiMaly/Enhancedlandingpagedesign --json description,name,owner)",
+      "WebSearch",
+      "Bash(xargs ls -la)",
+      "Bash(gh api *)",
+      "WebFetch(domain:api.github.com)",
+      "PowerShell(gh repo view MikiMaly/Enhancedlandingpagedesign)",
+      "PowerShell(gh repo view MikiMaly/Enhancedlandingpagedesign 2>&1)",
+      "Bash(ls c:/Users/mikim/ 2>&1 | head -20)",
+      "Read(//c/Users/mikim/**)",
+      "Bash(npm --version)",
+      "PowerShell(Get-Command node, npm, pnpm, bun -ErrorAction SilentlyContinue | Select-Object Name, Source; Write-Output \"---\"; Test-Path \"C:\\\\Program Files\\\\nodejs\"; Test-Path \"$env:LOCALAPPDATA\\\\fnm\"; Test-Path \"$env:APPDATA\\\\nvm\")",
+      "PowerShell(winget install --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements --silent 2>&1)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); node --version; npm --version)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/Enhancedlandingpagedesign; npm install 2>&1 | Select-Object -Last 15)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/Enhancedlandingpagedesign; npm run dev 2>&1)",
+      "Bash(git checkout *)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/hub; npm install 2>&1 | Select-Object -Last 20)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/hub; npm run build 2>&1 | Select-Object -Last 30)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/hub; npm run dev 2>&1)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/hub; npm run build 2>&1 | Select-Object -Last 15)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/hub; npm run build 2>&1 | Select-Object -Last 10)",
+      "Bash(rm -v login.html js/login.js js/main.js css/style.css private/index.html private/invites.html assets/favicon.png assets/uvd-icon.png)",
+      "Bash(rmdir js *)",
+      "Bash(git commit --allow-empty -m ' *)",
+      "Bash(git fetch *)",
+      "Bash(git branch *)",
+      "Bash(git reset *)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Set-Location c:/Users/mikim/hub; npm run build 2>&1 | Select-Object -Last 10; Write-Output \"---\"; if \\(Test-Path \"dist/private/polymarket.html\"\\) { Write-Output \"OK: dist/private/polymarket.html exists\" } else { Write-Output \"MISSING\" }; if \\(Test-Path \"dist/css/style.css\"\\) { Write-Output \"OK: dist/css/style.css exists\" } else { Write-Output \"MISSING\" })"
+    ]
+  }
+}
