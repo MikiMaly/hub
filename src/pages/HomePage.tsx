@@ -206,8 +206,8 @@ export default function HomePage() {
               >
                 <span className="text-primary font-semibold">IT Professional</span> ·{' '}
                 <span className="text-primary font-semibold">Linux admin</span> ·{' '}
-                <span className="text-primary font-semibold">SW dev</span> ·{' '}
-                <span className="text-primary font-semibold">Cloud Engineer</span>
+                <span className="text-primary font-semibold">Cloud Engineer</span> ·{' '}
+                <span className="text-primary font-semibold">SW dev</span>
               </span>
             </motion.h1>
 

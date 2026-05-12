@@ -124,7 +124,7 @@ Layered composition (back to front):
      - Headline (largest): "mmaly.cz"
        Font: Inter Bold, ~140px
        Color: linear gradient text fill, left-to-right #e5e7eb → #22c55e
-     - Subline: "IT Professional · Linux admin · SW dev · Cloud Engineer"
+     - Subline: "IT Professional · Linux admin · Cloud Engineer · SW dev"
        Font: Inter Regular, 36px
        Color: #94a3b8 (muted); the four role labels in #22c55e
 
