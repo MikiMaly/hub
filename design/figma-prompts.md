@@ -9,8 +9,7 @@ níže používej v každém promptu, ať si modely nemusí vymýšlet vlastní 
 ## Brand kontext (kopíruj do každého promptu)
 
 ```
-Brand: mmaly.cz — personal hub of Mikoláš Malý (IT Professional, Linux admin,
-Cloud Engineer,Software Developer).
+Brand: mmaly.cz — personal hub of Mikoláš Malý (IT Professional · Linux admin · Cloud Engineer · SW dev).
 
 Visual identity:
   - Dark, modern, technical, with subtle glassmorphism
