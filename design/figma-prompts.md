@@ -10,7 +10,7 @@ níže používej v každém promptu, ať si modely nemusí vymýšlet vlastní 
 
 ```
 Brand: mmaly.cz — personal hub of Mikoláš Malý (IT Professional, Linux admin,
-       Software Developer, Cloud Engineer).
+Cloud Engineer,Software Developer).
 
 Visual identity:
   - Dark, modern, technical, with subtle glassmorphism
