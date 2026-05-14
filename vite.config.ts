@@ -8,6 +8,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@gekos': path.resolve(__dirname, './gekos/src'),
     },
   },
   build: {

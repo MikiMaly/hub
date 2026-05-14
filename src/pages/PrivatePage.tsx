@@ -49,6 +49,15 @@ export default function PrivatePage() {
       href: '/private/polymarket.html',
       external: true,
     },
+    {
+      id: 'geckos',
+      icon: '🦎',
+      title: 'Pagekoni řasnatí',
+      description:
+        'Krmení (cvrčci, banán, antib, mast), mlžení terária, svlékání a historie péče o tři gekony.',
+      tags: ['d1', 'react'],
+      href: '/private/geckos',
+    },
   ]
 
   if (admin) {

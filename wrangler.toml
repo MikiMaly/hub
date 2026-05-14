@@ -21,3 +21,10 @@ id = "816e5069367440448a280e591a827046"
 [[kv_namespaces]]
 binding = "SIGNALS"
 id = "8dc4d9cbf2054be280041a33f2cd785e"
+
+# D1 binding pro gekos sub-app (sdílí databázi s gekos-cron Workerem)
+[[d1_databases]]
+binding = "DB"
+database_name = "gekos"
+database_id = "259436bf-1981-400d-9095-672ce0f429e5"
+migrations_dir = "gekos/migrations"

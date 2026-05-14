@@ -17,8 +17,9 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@gekos/*": ["./gekos/src/*"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "gekos/src"]
 }

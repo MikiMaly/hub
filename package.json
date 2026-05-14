@@ -4,9 +4,11 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "dev": "npm run prebuild && vite",
+    "prebuild": "node scripts/prebuild-gekos.mjs",
+    "build": "npm run prebuild && tsc -b && vite build",
+    "preview": "vite preview",
+    "bump-gekos": "git submodule update --remote gekos"
   },
   "dependencies": {
     "lucide-react": "^0.487.0",

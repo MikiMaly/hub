@@ -1,0 +1,3 @@
+[submodule "gekos"]
+	path = gekos
+	url = https://github.com/MikiMaly/gekos.git
