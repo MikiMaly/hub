@@ -6,6 +6,7 @@
 - [ ] Port `private/polymarket.html` do React komponenty `/private/polymarket` (stejný design language)
 - [ ] Hostovat UVD jako webapp na mmaly.cz — nejdřív pro uživatele s invite kódem (`/private/uvd`?), pak veřejně (`/uvd`)
 - [ ] Mobile responsiveness review nového Figma portu (md:/lg: breakpointy)
+- [ ] Mobile page optimization — projít všechny stránky (HomePage, PrivatePage, LoginPage, InvitesPage, gekos sub-app) na malých obrazovkách: padding/spacing, font-size škálování (h1 3rem → ~2rem na mobile), tap targety ≥44px, fixed header neukrojí obsah, žádný horizontální scroll, dropdown/select čitelnost, modaly/popovery
 - [ ] A11y audit — aria-labels, keyboard nav, focus styles
 
 
