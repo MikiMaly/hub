@@ -40,6 +40,15 @@ export default function PrivatePage() {
 
   const cards: ProjectCard[] = [
     {
+      id: 'geckos',
+      icon: '🦎',
+      title: 'Pagekoni řasnatí',
+      description:
+        'Krmení (cvrčci, banán, antib, mast), mlžení terária, svlékání a historie péče o tři gekony.',
+      tags: ['d1', 'react'],
+      href: '/private/geckos',
+    },
+    {
       id: 'polymarket',
       icon: '📊',
       title: 'Polymarket Bot',
@@ -48,15 +57,6 @@ export default function PrivatePage() {
       tags: ['python', 'gemini'],
       href: '/private/polymarket.html',
       external: true,
-    },
-    {
-      id: 'geckos',
-      icon: '🦎',
-      title: 'Pagekoni řasnatí',
-      description:
-        'Krmení (cvrčci, banán, antib, mast), mlžení terária, svlékání a historie péče o tři gekony.',
-      tags: ['d1', 'react'],
-      href: '/private/geckos',
     },
   ]
 
