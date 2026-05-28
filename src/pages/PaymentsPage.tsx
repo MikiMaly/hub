@@ -558,7 +558,7 @@ export default function PaymentsPage() {
 
                 <div>
                   <label className="block mb-1.5 text-sm text-muted-foreground">
-                    {form.recurring ? 'Datum příští splatnosti' : 'Datum splatnosti'}
+                    {form.recurringMonths > 0 ? 'Datum příští splatnosti' : 'Datum splatnosti'}
                   </label>
                   <input
                     type="date"
