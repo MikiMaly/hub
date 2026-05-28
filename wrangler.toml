@@ -22,6 +22,12 @@ id = "816e5069367440448a280e591a827046"
 binding = "SIGNALS"
 id = "8dc4d9cbf2054be280041a33f2cd785e"
 
+# KV namespace pro platby
+# Vytvoř namespace: Cloudflare dashboard → Workers & Pages → KV → "HUB_PAYMENTS"
+[[kv_namespaces]]
+binding = "PAYMENTS"
+id = "baa2b4a037824c1590ad4035b97d6000"
+
 # D1 binding pro gekos sub-app (sdílí databázi s gekos-cron Workerem)
 [[d1_databases]]
 binding = "DB"

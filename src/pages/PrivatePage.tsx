@@ -62,6 +62,15 @@ export default function PrivatePage() {
 
   if (admin) {
     cards.push({
+      id: 'payments',
+      icon: '💳',
+      title: 'Platby',
+      description: 'Přehled opakovaných plateb s upozorněním na blížící se termíny.',
+      tags: ['admin'],
+      href: '/private/payments',
+      badge: 'admin',
+    })
+    cards.push({
       id: 'invites',
       icon: '🔑',
       title: 'Správa pozvánek',
