@@ -48,6 +48,15 @@ export default function PrivatePage() {
       tags: ['d1', 'react'],
       href: '/private/geckos',
     },
+    ...(admin ? [{
+      id: 'payments',
+      icon: '💳',
+      title: 'Platby',
+      description: 'Přehled opakovaných plateb s upozorněním na blížící se termíny.',
+      tags: ['admin'],
+      href: '/private/payments',
+      badge: 'admin',
+    }] : []),
     {
       id: 'polymarket',
       icon: '📊',
@@ -58,19 +67,7 @@ export default function PrivatePage() {
       href: '/private/polymarket.html',
       external: true,
     },
-  ]
-
-  if (admin) {
-    cards.push({
-      id: 'payments',
-      icon: '💳',
-      title: 'Platby',
-      description: 'Přehled opakovaných plateb s upozorněním na blížící se termíny.',
-      tags: ['admin'],
-      href: '/private/payments',
-      badge: 'admin',
-    })
-    cards.push({
+    ...(admin ? [{
       id: 'invites',
       icon: '🔑',
       title: 'Správa pozvánek',
@@ -78,8 +75,8 @@ export default function PrivatePage() {
       tags: ['admin'],
       href: '/private/invites',
       badge: 'admin',
-    })
-  }
+    }] : []),
+  ]
 
   return (
     <div className="min-h-screen bg-background text-foreground">
