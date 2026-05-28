@@ -72,6 +72,7 @@ export async function onRequestPut({ request, env }) {
 
   payments[idx] = {
     id: body.id,
+    status: body.status ?? 'active',
     name: String(body.name).trim(),
     amount: Number(body.amount),
     dueDate: String(body.dueDate),
@@ -79,6 +80,7 @@ export async function onRequestPut({ request, env }) {
     ...(body.accountNumber && { accountNumber: String(body.accountNumber).trim() }),
     ...(body.varSymbol && { varSymbol: String(body.varSymbol).trim() }),
     ...(body.note && { note: String(body.note).trim() }),
+    ...(body.emailSubject && { emailSubject: String(body.emailSubject).trim() }),
   };
 
   await env.PAYMENTS.put(PAYMENTS_KEY, JSON.stringify(payments));

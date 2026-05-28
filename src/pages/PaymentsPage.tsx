@@ -5,9 +5,11 @@ import {
   AlertTriangle,
   ArrowLeft,
   Calendar,
+  Check,
   CreditCard,
   Edit2,
   LogOut,
+  Mail,
   Plus,
   RefreshCw,
   Trash2,
@@ -20,12 +22,14 @@ type Payment = {
   id: string
   name: string
   amount: number
-  dueDate: string        // "YYYY-MM-DD" — kotevní datum; u opakovaných určuje den v měsíci
-  recurringMonths: number  // 0 = jednorázová, 1 = měsíčně, 3 = čtvrtletně
-  recurring?: boolean    // starý formát pro backward compat
+  dueDate: string
+  recurringMonths: number
+  status?: 'active' | 'pending'
+  recurring?: boolean       // starý formát pro backward compat
   accountNumber?: string
   varSymbol?: string
   note?: string
+  emailSubject?: string     // předmět emailu ze kterého byl návrh vytvořen
 }
 
 type FormData = {
@@ -183,6 +187,32 @@ export default function PaymentsPage() {
     }
   }
 
+  const handleApprove = async (p: Payment) => {
+    try {
+      await fetch('/api/payments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...p, status: 'active', recurringMonths: p.recurringMonths ?? 0 }),
+      })
+      await loadPayments()
+    } catch {
+      setError('Schválení selhalo.')
+    }
+  }
+
+  const handleReject = async (p: Payment) => {
+    try {
+      await fetch('/api/payments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: p.id }),
+      })
+      await loadPayments()
+    } catch {
+      setError('Odmítnutí selhalo.')
+    }
+  }
+
   const handleDelete = async (p: Payment) => {
     if (!confirm(`Smazat platbu „${p.name}"?`)) return
     try {
@@ -204,7 +234,10 @@ export default function PaymentsPage() {
 
   if (!ready) return null
 
-  const sorted = [...payments].sort(
+  const pending = payments.filter(p => p.status === 'pending')
+  const active = payments.filter(p => p.status !== 'pending')
+
+  const sorted = [...active].sort(
     (a, b) => getNextDueDate(a).getTime() - getNextDueDate(b).getTime(),
   )
 
@@ -213,7 +246,7 @@ export default function PaymentsPage() {
     return d >= 0 && d <= 7
   }).length
 
-  const monthlyTotal = payments.reduce((s, p) => {
+  const monthlyTotal = active.reduce((s, p) => {
     const months = p.recurringMonths ?? (p.recurring ? 1 : 0)
     if (months === 1) return s + p.amount
     if (months === 3) return s + p.amount / 3
@@ -304,6 +337,66 @@ export default function PaymentsPage() {
             <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm">
               {error}
             </div>
+          )}
+
+          {pending.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6 relative rounded-2xl bg-card border border-yellow-500/30 overflow-hidden"
+            >
+              <div className="absolute inset-0 opacity-20 pointer-events-none" style={NOISE_BG} />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 px-6 py-4 border-b border-yellow-500/20">
+                  <Mail className="w-4 h-4 text-yellow-500" />
+                  <span className="font-medium text-yellow-500">
+                    Ke schválení ({pending.length})
+                  </span>
+                </div>
+                {pending.map(p => (
+                  <div
+                    key={p.id}
+                    className="flex items-center gap-4 px-6 py-4 border-b border-border last:border-0"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium">{p.name}</div>
+                      {p.emailSubject && (
+                        <div className="text-xs text-muted-foreground mt-0.5 truncate opacity-60">
+                          z emailu: {p.emailSubject}
+                        </div>
+                      )}
+                      <div className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {formatDate(new Date(p.dueDate + 'T00:00:00'))}
+                        {p.accountNumber && <span className="ml-2">· č.ú. {p.accountNumber}</span>}
+                        {p.varSymbol && <span>· VS {p.varSymbol}</span>}
+                      </div>
+                    </div>
+                    <div className="font-medium text-primary shrink-0">
+                      {formatAmount(p.amount)}
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <motion.button
+                        onClick={() => handleApprove(p)}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20 text-sm font-medium transition-colors"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        Přijmout
+                      </motion.button>
+                      <button
+                        onClick={() => handleReject(p)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 border border-destructive/20 text-sm transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        Odmítnout
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           )}
 
           <motion.div
