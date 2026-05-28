@@ -20,8 +20,9 @@ type Payment = {
   id: string
   name: string
   amount: number
-  dueDate: string   // "YYYY-MM-DD" — u opakovaných je to kotevní datum (den v měsíci)
-  recurring: boolean
+  dueDate: string        // "YYYY-MM-DD" — kotevní datum; u opakovaných určuje den v měsíci
+  recurringMonths: number  // 0 = jednorázová, 1 = měsíčně, 3 = čtvrtletně
+  recurring?: boolean    // starý formát pro backward compat
   accountNumber?: string
   varSymbol?: string
   note?: string
@@ -31,7 +32,7 @@ type FormData = {
   name: string
   amount: string
   dueDate: string
-  recurring: boolean
+  recurringMonths: number
   accountNumber: string
   varSymbol: string
   note: string
@@ -44,13 +45,15 @@ const MONTHS_GEN = [
 
 function getNextDueDate(p: Payment): Date {
   const base = new Date(p.dueDate + 'T00:00:00')
-  if (!p.recurring) return base
+  // backward compat: starý bool recurring → měsíčně
+  const months = p.recurringMonths ?? (p.recurring ? 1 : 0)
+  if (!months) return base
 
   const now = new Date()
   now.setHours(0, 0, 0, 0)
   const due = new Date(base)
   while (due < now) {
-    due.setMonth(due.getMonth() + 1)
+    due.setMonth(due.getMonth() + months)
   }
   return due
 }
@@ -78,7 +81,7 @@ function pluralDays(n: number): string {
   return 'dní'
 }
 
-const EMPTY_FORM: FormData = { name: '', amount: '', dueDate: '', recurring: false, accountNumber: '', varSymbol: '', note: '' }
+const EMPTY_FORM: FormData = { name: '', amount: '', dueDate: '', recurringMonths: 0, accountNumber: '', varSymbol: '', note: '' }
 
 const NOISE_BG = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")`,
@@ -132,7 +135,7 @@ export default function PaymentsPage() {
       name: p.name,
       amount: String(p.amount),
       dueDate: p.dueDate,
-      recurring: p.recurring,
+      recurringMonths: p.recurringMonths ?? (p.recurring ? 1 : 0),
       accountNumber: p.accountNumber ?? '',
       varSymbol: p.varSymbol ?? '',
       note: p.note ?? '',
@@ -158,7 +161,7 @@ export default function PaymentsPage() {
       name: form.name.trim(),
       amount: Number(form.amount),
       dueDate: form.dueDate,
-      recurring: form.recurring,
+      recurringMonths: form.recurringMonths,
       ...(form.accountNumber.trim() && { accountNumber: form.accountNumber.trim() }),
       ...(form.varSymbol.trim() && { varSymbol: form.varSymbol.trim() }),
       ...(form.note.trim() && { note: form.note.trim() }),
@@ -210,9 +213,12 @@ export default function PaymentsPage() {
     return d >= 0 && d <= 7
   }).length
 
-  const monthlyTotal = payments
-    .filter(p => p.recurring)
-    .reduce((s, p) => s + p.amount, 0)
+  const monthlyTotal = payments.reduce((s, p) => {
+    const months = p.recurringMonths ?? (p.recurring ? 1 : 0)
+    if (months === 1) return s + p.amount
+    if (months === 3) return s + p.amount / 3
+    return s
+  }, 0)
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -275,8 +281,8 @@ export default function PaymentsPage() {
             <div className="flex flex-wrap gap-3">
               {monthlyTotal > 0 && (
                 <div className="px-4 py-2 rounded-xl bg-card border border-border text-sm">
-                  <span className="text-muted-foreground">Opakované měsíčně: </span>
-                  <span className="font-medium">{formatAmount(monthlyTotal)}</span>
+                  <span className="text-muted-foreground">Průměrně měsíčně: </span>
+                  <span className="font-medium">{formatAmount(Math.round(monthlyTotal))}</span>
                 </div>
               )}
               {upcomingSoon > 0 && (
@@ -342,10 +348,10 @@ export default function PaymentsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-medium">{p.name}</span>
-                            {p.recurring && (
+                            {((p.recurringMonths ?? (p.recurring ? 1 : 0)) > 0) && (
                               <span className="flex items-center gap-1 px-2 py-0.5 rounded text-xs text-muted-foreground border border-border">
                                 <RefreshCw className="w-3 h-3" />
-                                opakovaná
+                                {(p.recurringMonths ?? 1) === 1 ? 'měsíčně' : 'čtvrtletně'}
                               </span>
                             )}
                             {(overdue || urgent || soon) && (
@@ -469,15 +475,29 @@ export default function PaymentsPage() {
                   />
                 </div>
 
-                <label className="flex items-center gap-3 cursor-pointer select-none">
-                  <div
-                    onClick={() => setForm(f => ({ ...f, recurring: !f.recurring }))}
-                    className={`relative w-10 h-6 rounded-full transition-colors ${form.recurring ? 'bg-primary' : 'bg-secondary'}`}
-                  >
-                    <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${form.recurring ? 'translate-x-5' : 'translate-x-1'}`} />
+                <div>
+                  <label className="block mb-1.5 text-sm text-muted-foreground">Opakování</label>
+                  <div className="flex gap-2">
+                    {([
+                      { value: 0, label: 'Jednorázová' },
+                      { value: 1, label: 'Každý měsíc' },
+                      { value: 3, label: 'Každé 3 měsíce' },
+                    ] as const).map(opt => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, recurringMonths: opt.value }))}
+                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
+                          form.recurringMonths === opt.value
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-secondary text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
                   </div>
-                  <span className="text-sm">Opakovaná platba (každý měsíc)</span>
-                </label>
+                </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
