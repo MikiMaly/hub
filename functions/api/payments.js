@@ -44,6 +44,9 @@ export async function onRequestPost({ request, env }) {
     amount: Number(body.amount),
     dueDate: String(body.dueDate),
     recurring: Boolean(body.recurring),
+    ...(body.accountNumber && { accountNumber: String(body.accountNumber).trim() }),
+    ...(body.varSymbol && { varSymbol: String(body.varSymbol).trim() }),
+    ...(body.note && { note: String(body.note).trim() }),
   };
 
   const raw = await env.PAYMENTS.get(PAYMENTS_KEY);
@@ -73,6 +76,9 @@ export async function onRequestPut({ request, env }) {
     amount: Number(body.amount),
     dueDate: String(body.dueDate),
     recurring: Boolean(body.recurring),
+    ...(body.accountNumber && { accountNumber: String(body.accountNumber).trim() }),
+    ...(body.varSymbol && { varSymbol: String(body.varSymbol).trim() }),
+    ...(body.note && { note: String(body.note).trim() }),
   };
 
   await env.PAYMENTS.put(PAYMENTS_KEY, JSON.stringify(payments));

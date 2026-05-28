@@ -22,6 +22,9 @@ type Payment = {
   amount: number
   dueDate: string   // "YYYY-MM-DD" — u opakovaných je to kotevní datum (den v měsíci)
   recurring: boolean
+  accountNumber?: string
+  varSymbol?: string
+  note?: string
 }
 
 type FormData = {
@@ -29,6 +32,9 @@ type FormData = {
   amount: string
   dueDate: string
   recurring: boolean
+  accountNumber: string
+  varSymbol: string
+  note: string
 }
 
 const MONTHS_GEN = [
@@ -72,7 +78,7 @@ function pluralDays(n: number): string {
   return 'dní'
 }
 
-const EMPTY_FORM: FormData = { name: '', amount: '', dueDate: '', recurring: false }
+const EMPTY_FORM: FormData = { name: '', amount: '', dueDate: '', recurring: false, accountNumber: '', varSymbol: '', note: '' }
 
 const NOISE_BG = {
   backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")`,
@@ -122,7 +128,15 @@ export default function PaymentsPage() {
 
   const openEdit = (p: Payment) => {
     setEditing(p)
-    setForm({ name: p.name, amount: String(p.amount), dueDate: p.dueDate, recurring: p.recurring })
+    setForm({
+      name: p.name,
+      amount: String(p.amount),
+      dueDate: p.dueDate,
+      recurring: p.recurring,
+      accountNumber: p.accountNumber ?? '',
+      varSymbol: p.varSymbol ?? '',
+      note: p.note ?? '',
+    })
     setFormError('')
     setShowModal(true)
   }
@@ -145,6 +159,9 @@ export default function PaymentsPage() {
       amount: Number(form.amount),
       dueDate: form.dueDate,
       recurring: form.recurring,
+      ...(form.accountNumber.trim() && { accountNumber: form.accountNumber.trim() }),
+      ...(form.varSymbol.trim() && { varSymbol: form.varSymbol.trim() }),
+      ...(form.note.trim() && { note: form.note.trim() }),
     }
 
     try {
@@ -348,6 +365,13 @@ export default function PaymentsPage() {
                             <Calendar className="w-3 h-3" />
                             {formatDate(nextDue)}
                           </div>
+                          {(p.accountNumber || p.varSymbol || p.note) && (
+                            <div className="text-xs text-muted-foreground mt-1 flex flex-wrap gap-x-3 gap-y-0.5 opacity-70">
+                              {p.accountNumber && <span>č.ú. {p.accountNumber}</span>}
+                              {p.varSymbol && <span>VS {p.varSymbol}</span>}
+                              {p.note && <span>{p.note}</span>}
+                            </div>
+                          )}
                         </div>
 
                         <div className="font-medium text-primary shrink-0">
@@ -454,6 +478,40 @@ export default function PaymentsPage() {
                   </div>
                   <span className="text-sm">Opakovaná platba (každý měsíc)</span>
                 </label>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block mb-1.5 text-sm text-muted-foreground">Číslo účtu</label>
+                    <input
+                      type="text"
+                      value={form.accountNumber}
+                      onChange={e => setForm(f => ({ ...f, accountNumber: e.target.value }))}
+                      placeholder="123456789/0800"
+                      className="w-full px-4 py-2.5 rounded-lg bg-input-background border border-border focus:border-primary focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block mb-1.5 text-sm text-muted-foreground">Variabilní symbol</label>
+                    <input
+                      type="text"
+                      value={form.varSymbol}
+                      onChange={e => setForm(f => ({ ...f, varSymbol: e.target.value }))}
+                      placeholder="1234567890"
+                      className="w-full px-4 py-2.5 rounded-lg bg-input-background border border-border focus:border-primary focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1.5 text-sm text-muted-foreground">Poznámka</label>
+                  <input
+                    type="text"
+                    value={form.note}
+                    onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+                    placeholder="nepovinné"
+                    className="w-full px-4 py-2.5 rounded-lg bg-input-background border border-border focus:border-primary focus:outline-none transition-colors"
+                  />
+                </div>
 
                 {formError && (
                   <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
