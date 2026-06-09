@@ -14,10 +14,11 @@ async function checkAdmin(env, pw, request) {
 
 function generateCode() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const rand = crypto.getRandomValues(new Uint8Array(8));
   let code = '';
   for (let i = 0; i < 8; i++) {
     if (i === 4) code += '-';
-    code += chars[Math.floor(Math.random() * chars.length)];
+    code += chars[rand[i] % chars.length]; // 256 % 32 === 0 → bez modulo biasu
   }
   return code; // např. ABCD-EF3G
 }

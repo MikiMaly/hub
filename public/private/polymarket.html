@@ -331,6 +331,13 @@
     let allSignals = [];
     let activeFilter = 'all';
 
+    // escapování dat vkládaných do innerHTML (Polymarket API, signály od bota)
+    function esc(v) {
+      return String(v).replace(/[&<>"']/g, c => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[c]));
+    }
+
     // ── Polymarket live markets ──────────────────────────────────────────────
 
     function renderMarkets(markets) {
@@ -354,7 +361,7 @@
         return `
           <div class="market-card">
             <div class="market-card__label">${statusDot}${label}</div>
-            <div class="market-card__question">${m.question}</div>
+            <div class="market-card__question">${esc(m.question)}</div>
             <div class="market-card__prices">
               <div class="market-price">
                 <span class="market-price__label">YES</span>
@@ -389,7 +396,7 @@
         BUY_DOWN: ['badge--down', '🔴 BUY DOWN'],
         SKIP:     ['badge--skip', '⚪ SKIP'],
       };
-      const [cls, label] = map[action] || ['badge--skip', action];
+      const [cls, label] = map[action] || ['badge--skip', esc(action)];
       return `<span class="badge ${cls}">${label}</span>`;
     }
 
@@ -413,11 +420,11 @@
       }
       tbody.innerHTML = signals.map(s => `
         <tr>
-          <td class="time-cell">${s.timestamp || '—'}</td>
+          <td class="time-cell">${s.timestamp ? esc(s.timestamp) : '—'}</td>
           <td class="price-cell">$${Number(s.btc_price).toLocaleString('cs-CZ')}</td>
           <td>${badge(s.action)}</td>
           <td>${confidenceBar(s.confidence)}</td>
-          <td><div class="reasoning">${s.reasoning || '—'}</div></td>
+          <td><div class="reasoning">${s.reasoning ? esc(s.reasoning) : '—'}</div></td>
         </tr>`).join('');
     }
 
