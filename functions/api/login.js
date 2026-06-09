@@ -3,6 +3,8 @@
  * Body: { password } — admin heslo
  *    nebo { code }     — invite kód
  */
+import { signSession, SESSION_COOKIE } from '../_auth.js';
+
 export async function onRequestPost({ request, env }) {
   let body;
   try {
@@ -13,17 +15,17 @@ export async function onRequestPost({ request, env }) {
 
   const { password, code } = body;
   const maxAge = 60 * 60 * 24 * 30;
-  const secure = 'HttpOnly; Secure; SameSite=Lax';
   let authed = false;
 
+  // HUB_PASSWORD slouží i jako podpisový klíč session cookie
+  if (!env.HUB_PASSWORD) {
+    return new Response(JSON.stringify({ error: 'Server misconfigured — set HUB_PASSWORD' }), {
+      status: 500, headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
   if (password) {
-    const expected = env.HUB_PASSWORD;
-    if (!expected) {
-      return new Response(JSON.stringify({ error: 'Server misconfigured — set HUB_PASSWORD' }), {
-        status: 500, headers: { 'Content-Type': 'application/json' },
-      });
-    }
-    authed = password === expected;
+    authed = password === env.HUB_PASSWORD;
   } else if (code) {
     if (!env.INVITES) {
       return new Response(JSON.stringify({ error: 'Server misconfigured — KV not bound' }), {
@@ -40,12 +42,13 @@ export async function onRequestPost({ request, env }) {
     });
   }
 
-  const isAdmin = !!password;
+  const role = password ? 'admin' : 'user';
+  const session = await signSession(role, env.HUB_PASSWORD, maxAge);
+
   const headers = new Headers({ 'Content-Type': 'application/json' });
-  headers.append('Set-Cookie', `hub_auth=1; Path=/; Max-Age=${maxAge}; ${secure}`);
+  headers.append('Set-Cookie', `${SESSION_COOKIE}=${session}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Lax`);
   headers.append('Set-Cookie', `hub_ui=1; Path=/; Max-Age=${maxAge}; Secure; SameSite=Lax`);
-  if (isAdmin) {
-    headers.append('Set-Cookie', `hub_admin=1; Path=/; Max-Age=${maxAge}; ${secure}`);
+  if (role === 'admin') {
     headers.append('Set-Cookie', `hub_admin_ui=1; Path=/; Max-Age=${maxAge}; Secure; SameSite=Lax`);
   }
   return new Response(JSON.stringify({ ok: true }), { status: 200, headers });

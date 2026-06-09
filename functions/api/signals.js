@@ -1,15 +1,15 @@
 /**
- * GET  /api/signals  — vrátí posledních 200 signálů (vyžaduje hub_auth cookie)
+ * GET  /api/signals  — vrátí posledních 200 signálů (vyžaduje session)
  * POST /api/signals  — uloží nový signál (vyžaduje Authorization: Bearer <BOT_SECRET>)
  */
+import { getSession } from '../_auth.js';
 
 const SIGNALS_KEY = 'signals:list';
 const MAX_SIGNALS = 200;
 
 export async function onRequestGet({ request, env }) {
-  const cookie = request.headers.get('Cookie') || '';
-  const isAuth = cookie.split(';').map(c => c.trim()).some(c => c === 'hub_auth=1');
-  if (!isAuth) {
+  const session = await getSession(request, env);
+  if (!session) {
     return new Response('Unauthorized', { status: 401 });
   }
 

@@ -4,10 +4,12 @@
  * DELETE /api/invite { adminpw, code }  — smaž kód
  */
 
-function checkAdmin(env, pw, request) {
-  const cookies = request.headers.get('Cookie') || '';
-  if (cookies.split(';').some(c => c.trim() === 'hub_admin=1')) return true;
-  return env.HUB_PASSWORD && pw === env.HUB_PASSWORD;
+import { getSession } from '../_auth.js';
+
+async function checkAdmin(env, pw, request) {
+  const session = await getSession(request, env);
+  if (session?.role === 'admin') return true;
+  return !!env.HUB_PASSWORD && pw === env.HUB_PASSWORD;
 }
 
 function generateCode() {
@@ -22,7 +24,7 @@ function generateCode() {
 
 export async function onRequestGet({ request, env }) {
   const url = new URL(request.url);
-  if (!checkAdmin(env, url.searchParams.get('adminpw'), request)) {
+  if (!(await checkAdmin(env, url.searchParams.get('adminpw'), request))) {
     return new Response('Forbidden', { status: 403 });
   }
   const list = await env.INVITES.list({ prefix: 'invite:' });
@@ -36,7 +38,7 @@ export async function onRequestGet({ request, env }) {
 export async function onRequestPost({ request, env }) {
   let body;
   try { body = await request.json(); } catch { return new Response('Bad request', { status: 400 }); }
-  if (!checkAdmin(env, body.adminpw, request)) return new Response('Forbidden', { status: 403 });
+  if (!(await checkAdmin(env, body.adminpw, request))) return new Response('Forbidden', { status: 403 });
 
   const code = generateCode();
   await env.INVITES.put(`invite:${code}`, JSON.stringify({
@@ -49,7 +51,7 @@ export async function onRequestPost({ request, env }) {
 export async function onRequestDelete({ request, env }) {
   let body;
   try { body = await request.json(); } catch { return new Response('Bad request', { status: 400 }); }
-  if (!checkAdmin(env, body.adminpw, request)) return new Response('Forbidden', { status: 403 });
+  if (!(await checkAdmin(env, body.adminpw, request))) return new Response('Forbidden', { status: 403 });
 
   await env.INVITES.delete(`invite:${body.code.trim().toUpperCase()}`);
   return new Response(JSON.stringify({ ok: true }), { headers: { 'Content-Type': 'application/json' } });

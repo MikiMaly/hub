@@ -1,15 +1,16 @@
 /**
- * GET    /api/payments  — vrátí seznam plateb (vyžaduje hub_admin cookie)
- * POST   /api/payments  — vytvoří platbu (vyžaduje hub_admin cookie)
- * PUT    /api/payments  — aktualizuje platbu podle id (vyžaduje hub_admin cookie)
- * DELETE /api/payments  — smaže platbu podle id (vyžaduje hub_admin cookie)
+ * GET    /api/payments  — vrátí seznam plateb (vyžaduje admin session)
+ * POST   /api/payments  — vytvoří platbu (vyžaduje admin session)
+ * PUT    /api/payments  — aktualizuje platbu podle id (vyžaduje admin session)
+ * DELETE /api/payments  — smaže platbu podle id (vyžaduje admin session)
  */
+import { getSession } from '../_auth.js';
 
 const PAYMENTS_KEY = 'payments:list';
 
-function isAdmin(request) {
-  const cookie = request.headers.get('Cookie') || '';
-  return cookie.split(';').map(c => c.trim()).some(c => c === 'hub_admin=1');
+async function isAdmin(request, env) {
+  const session = await getSession(request, env);
+  return session?.role === 'admin';
 }
 
 function json(data, status = 200) {
@@ -20,7 +21,7 @@ function json(data, status = 200) {
 }
 
 export async function onRequestGet({ request, env }) {
-  if (!isAdmin(request)) return json({ error: 'Forbidden' }, 403);
+  if (!(await isAdmin(request, env))) return json({ error: 'Forbidden' }, 403);
   if (!env.PAYMENTS) return json({ error: 'KV not bound' }, 500);
 
   const raw = await env.PAYMENTS.get(PAYMENTS_KEY);
@@ -28,7 +29,7 @@ export async function onRequestGet({ request, env }) {
 }
 
 export async function onRequestPost({ request, env }) {
-  if (!isAdmin(request)) return json({ error: 'Forbidden' }, 403);
+  if (!(await isAdmin(request, env))) return json({ error: 'Forbidden' }, 403);
   if (!env.PAYMENTS) return json({ error: 'KV not bound' }, 500);
 
   let body;
@@ -58,7 +59,7 @@ export async function onRequestPost({ request, env }) {
 }
 
 export async function onRequestPut({ request, env }) {
-  if (!isAdmin(request)) return json({ error: 'Forbidden' }, 403);
+  if (!(await isAdmin(request, env))) return json({ error: 'Forbidden' }, 403);
   if (!env.PAYMENTS) return json({ error: 'KV not bound' }, 500);
 
   let body;
@@ -88,7 +89,7 @@ export async function onRequestPut({ request, env }) {
 }
 
 export async function onRequestDelete({ request, env }) {
-  if (!isAdmin(request)) return json({ error: 'Forbidden' }, 403);
+  if (!(await isAdmin(request, env))) return json({ error: 'Forbidden' }, 403);
   if (!env.PAYMENTS) return json({ error: 'KV not bound' }, 500);
 
   let body;

@@ -2,21 +2,20 @@
  * Middleware — ochrana /private/* routes
  * Nepřihlášený uživatel je přesměrován na /login.html
  */
-export async function onRequest({ request, next }) {
+import { getSession } from './_auth.js';
+
+export async function onRequest({ request, env, next }) {
   const url = new URL(request.url);
 
   if (url.pathname.startsWith('/private')) {
-    const cookie = request.headers.get('Cookie') || '';
-    const cookies = cookie.split(';').map(c => c.trim());
-    const isAuth = cookies.some(c => c === 'hub_auth=1');
-    const isAdmin = cookies.some(c => c === 'hub_admin=1');
+    const session = await getSession(request, env);
 
-    if (!isAuth) {
+    if (!session) {
       const loginUrl = `/login?from=${encodeURIComponent(url.pathname)}`;
       return Response.redirect(new URL(loginUrl, request.url), 302);
     }
 
-    if (url.pathname.startsWith('/private/invites') && !isAdmin) {
+    if (url.pathname.startsWith('/private/invites') && session.role !== 'admin') {
       return Response.redirect(new URL('/private/', request.url), 302);
     }
   }

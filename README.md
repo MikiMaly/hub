@@ -124,14 +124,18 @@ V Pages projektu → **Custom domains** → přidej `mmaly.cz` (a `www.mmaly.cz`
 POST /api/login {password}   → admin
 POST /api/login {code}       → invite code (KV lookup)
                 ↓ úspěch nastaví:
-                  hub_auth=1       (HttpOnly)  — middleware gate
-                  hub_ui=1         (JS read)   — client UX gate
-                  hub_admin=1      (HttpOnly)  — admin gate (jen pro password login)
-                  hub_admin_ui=1   (JS read)   — admin UI hint
+                  hub_session=<payload>.<hmac>  (HttpOnly) — podepsaná session, nese roli (admin/user) + expiraci
+                  hub_ui=1                      (JS read)  — client UX gate
+                  hub_admin_ui=1                (JS read)  — admin UI hint (jen pro password login)
+
+functions/_auth.js — podpis a ověření session (HMAC-SHA256, klíč = HUB_PASSWORD)
+  ⚠ změna HUB_PASSWORD odhlásí všechny přihlášené (admin i invite)
 
 functions/_middleware.js → /private/*
-  - bez hub_auth → 302 /login?from=...
-  - /private/invites bez hub_admin → 302 /private
+  - bez platné hub_session → 302 /login?from=...
+  - /private/invites bez role admin → 302 /private
 ```
 
+API endpointy (`/api/payments`, `/api/signals` GET, `/api/invite`) ověřují tutéž podepsanou
+session. Webhooky (`/api/signals` POST, `/api/payment-proposals`) používají Bearer tokeny.
 Klientský guard (`src/lib/auth.ts`) čte `hub_ui` / `hub_admin_ui` pro UX. Reálný gate je server middleware.
