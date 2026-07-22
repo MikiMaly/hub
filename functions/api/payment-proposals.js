@@ -28,9 +28,11 @@ function json(data, status = 200) {
   });
 }
 
+/** Vrací { data } při úspěchu, jinak { reason, raw } pro diagnostiku. */
 async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
+  let result;
   try {
-    const result = await env.AI.run(AI_MODEL, {
+    result = await env.AI.run(AI_MODEL, {
       messages: [
         { role: 'system', content: AI_SYSTEM },
         {
@@ -38,16 +40,28 @@ async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
           content: `Od: ${emailFrom}\nPředmět: ${emailSubject}\n\n${emailBody.slice(0, 3000)}`,
         },
       ],
+      max_tokens: 300,
     });
-    const text = result?.response ?? '';
-    const match = text.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    const parsed = JSON.parse(match[0]);
-    if (parsed.error) return null;
-    return parsed;
-  } catch {
-    return null;
+  } catch (e) {
+    return { reason: 'ai_call_failed', raw: String(e?.message ?? e) };
   }
+
+  const text = result?.response ?? '';
+  const match = text.match(/\{[\s\S]*?\}/);
+  if (!match) return { reason: 'no_json_in_response', raw: text.slice(0, 500) };
+
+  let parsed;
+  try {
+    parsed = JSON.parse(match[0]);
+  } catch (e) {
+    return { reason: 'invalid_json', raw: match[0].slice(0, 500) };
+  }
+
+  if (parsed.error) return { reason: 'model_says_no_payment', raw: match[0].slice(0, 500) };
+  if (!parsed.name || parsed.amount == null) {
+    return { reason: 'missing_fields', raw: match[0].slice(0, 500) };
+  }
+  return { data: parsed };
 }
 
 export async function onRequestPost({ request, env }) {
@@ -68,11 +82,11 @@ export async function onRequestPost({ request, env }) {
       return json({ error: 'Workers AI binding "AI" not configured in Cloudflare Pages' }, 503);
     }
     const parsed = await parseWithAI(env, body.emailFrom ?? '', body.emailSubject ?? '', body.emailBody);
-    if (!parsed) {
-      return json({ error: 'AI parsing failed or no payment found in email' }, 422);
+    if (!parsed.data) {
+      return json({ error: 'no payment parsed', reason: parsed.reason, raw: parsed.raw }, 422);
     }
     fields = {
-      ...parsed,
+      ...parsed.data,
       emailSubject: body.emailSubject,
     };
   }
