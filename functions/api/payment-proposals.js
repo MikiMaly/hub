@@ -54,7 +54,12 @@ async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
       continue; // model je zrušený/přetížený → zkus další
     }
 
-    const text = result?.response ?? '';
+    // .response nemusí být řetězec (podle modelu i objekt) — vždy převést.
+    const rawResponse = result?.response;
+    const text = typeof rawResponse === 'string'
+      ? rawResponse
+      : JSON.stringify(rawResponse ?? result ?? '');
+
     const match = text.match(/\{[\s\S]*?\}/);
     if (!match) {
       last = { reason: 'no_json_in_response', raw: text.slice(0, 500), model };
@@ -85,7 +90,16 @@ async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
   return last;
 }
 
-export async function onRequestPost({ request, env }) {
+export async function onRequestPost(context) {
+  try {
+    return await handlePost(context);
+  } catch (e) {
+    // Bez tohohle vrací Cloudflare neprůhlednou chybu 1101.
+    return json({ error: 'unhandled', message: String(e?.message ?? e), stack: String(e?.stack ?? '').slice(0, 800) }, 500);
+  }
+}
+
+async function handlePost({ request, env }) {
   const auth = request.headers.get('Authorization') || '';
   const secret = env.PAYMENTS_WEBHOOK_SECRET;
   if (!secret || auth !== `Bearer ${secret}`) {
