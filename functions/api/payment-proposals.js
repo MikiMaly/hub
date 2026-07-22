@@ -17,14 +17,50 @@ const AI_MODELS = [
 ];
 
 const AI_SYSTEM = `Jsi extraktor platebních informací z emailů. Vrať POUZE validní JSON bez markdown bloků:
-{"name":"název služby","amount":123,"dueDate":"YYYY-MM-DD","note":"stručná poznámka"}
+{"name":"název služby","amount":123.45,"dueDate":"YYYY-MM-DD","note":"stručná poznámka"}
 
 Pravidla:
 - name: krátký název max 30 znaků, např. "iCloud 50GB", "Spotify Premium", "Vodafone faktura", "Generali pojištění"
-- amount: číslo v CZK (EUR×25, USD×23)
-- dueDate: datum splatnosti, nebo datum stržení pokud jde o potvrzení platby
+- amount: číslo v CZK. POZOR na český formát — čárka je DESETINNÁ tečka, mezera odděluje tisíce:
+    "59,99 Kč"    -> 59.99   (NE 5999)
+    "1 250,00 Kč" -> 1250
+    "1 250 Kč"    -> 1250
+    "12,50 EUR"   -> 312.5   (EUR×25)
+    "9.99 USD"    -> 229.77  (USD×23)
+  V JSONu piš číslo vždy s tečkou jako desetinným oddělovačem, bez měny a bez mezer.
+- dueDate: datum splatnosti ve tvaru YYYY-MM-DD. Pokud v emailu žádné datum není,
+  vrať null — NIKDY nepiš text jako "není" nebo "nespecifikováno".
 - note: jedna věta s číslem faktury, obdobím apod. (nebo prázdný řetězec)
 - Pokud email neobsahuje žádnou platbu, vrať: {"error":"no payment"}`;
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Vrátí YYYY-MM-DD, nebo null když je vstup nepoužitelný (model rád vrací text). */
+function normalizeDate(value) {
+  if (typeof value !== 'string' || !ISO_DATE.test(value)) return null;
+  const d = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  // Odchytí i formálně platné, ale nesmyslné datum (např. 2026-02-31).
+  return d.toISOString().slice(0, 10) === value ? value : null;
+}
+
+/** Převede částku na číslo a ošetří český formát "1 250,50 Kč". */
+function normalizeAmount(value) {
+  let n;
+  if (typeof value === 'number') {
+    n = value;
+  } else if (typeof value === 'string') {
+    const cleaned = value
+      .replace(/[^\d,.\-]/g, '')   // pryč měna a mezery
+      .replace(/\.(?=\d{3}\b)/g, '') // tečka jako oddělovač tisíců
+      .replace(',', '.');
+    n = Number(cleaned);
+  } else {
+    return null;
+  }
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n * 100) / 100;
+}
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -79,12 +115,16 @@ async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
       return { reason: 'model_says_no_payment', raw: match[0].slice(0, 500), model };
     }
 
-    if (!parsed.name || parsed.amount == null) {
+    const amount = normalizeAmount(parsed.amount);
+    if (!parsed.name || amount == null) {
       last = { reason: 'missing_fields', raw: match[0].slice(0, 500), model };
       continue;
     }
 
-    return { data: parsed, model };
+    return {
+      data: { ...parsed, amount, dueDate: normalizeDate(parsed.dueDate) },
+      model,
+    };
   }
 
   return last;
@@ -126,7 +166,8 @@ async function handlePost({ request, env }) {
     };
   }
 
-  if (!fields.name || !fields.amount) {
+  const amount = normalizeAmount(fields.amount);
+  if (!fields.name || amount == null) {
     return json({ error: 'Missing name or amount' }, 400);
   }
 
@@ -134,8 +175,8 @@ async function handlePost({ request, env }) {
     id: crypto.randomUUID(),
     status: 'pending',
     name: String(fields.name).trim(),
-    amount: Number(fields.amount),
-    dueDate: fields.dueDate || new Date().toISOString().split('T')[0],
+    amount,
+    dueDate: normalizeDate(fields.dueDate) ?? new Date().toISOString().split('T')[0],
     recurringMonths: Number(fields.recurringMonths ?? 0),
     ...(fields.accountNumber && { accountNumber: String(fields.accountNumber).trim() }),
     ...(fields.varSymbol && { varSymbol: String(fields.varSymbol).trim() }),
