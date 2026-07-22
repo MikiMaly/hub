@@ -9,11 +9,11 @@
 
 const PAYMENTS_KEY = 'payments:list';
 
-// Zkouší se popořadě — když je model zrušený nebo přetížený, přejde se na další.
+// Od nejlevnějšího. Na další se přejde jen když model spadne nebo vrátí
+// nepoužitelný výstup — ne když věcně rozhodne, že platba v mailu není.
 const AI_MODELS = [
-  '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
   '@cf/meta/llama-3.1-8b-instruct-fast',
-  '@cf/meta/llama-4-scout-17b-16e-instruct',
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
 ];
 
 const AI_SYSTEM = `Jsi extraktor platebních informací z emailů. Vrať POUZE validní JSON bez markdown bloků:
@@ -43,36 +43,46 @@ async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
     },
   ];
 
-  let result;
-  let model;
-  const errors = [];
-  for (const candidate of AI_MODELS) {
+  let last = { reason: 'no_models_tried', raw: '' };
+
+  for (const model of AI_MODELS) {
+    let result;
     try {
-      result = await env.AI.run(candidate, { messages, max_tokens: 300 });
-      model = candidate;
-      break;
+      result = await env.AI.run(model, { messages, max_tokens: 300 });
     } catch (e) {
-      errors.push(`${candidate}: ${String(e?.message ?? e)}`);
+      last = { reason: 'ai_call_failed', raw: String(e?.message ?? e), model };
+      continue; // model je zrušený/přetížený → zkus další
     }
-  }
-  if (!result) return { reason: 'ai_call_failed', raw: errors.join(' | ') };
 
-  const text = result?.response ?? '';
-  const match = text.match(/\{[\s\S]*?\}/);
-  if (!match) return { reason: 'no_json_in_response', raw: text.slice(0, 500) };
+    const text = result?.response ?? '';
+    const match = text.match(/\{[\s\S]*?\}/);
+    if (!match) {
+      last = { reason: 'no_json_in_response', raw: text.slice(0, 500), model };
+      continue; // nepoužitelný výstup → zkus chytřejší model
+    }
 
-  let parsed;
-  try {
-    parsed = JSON.parse(match[0]);
-  } catch (e) {
-    return { reason: 'invalid_json', raw: match[0].slice(0, 500) };
+    let parsed;
+    try {
+      parsed = JSON.parse(match[0]);
+    } catch {
+      last = { reason: 'invalid_json', raw: match[0].slice(0, 500), model };
+      continue;
+    }
+
+    // Věcné rozhodnutí modelu — eskalovat nemá smysl, jen by to stálo navíc.
+    if (parsed.error) {
+      return { reason: 'model_says_no_payment', raw: match[0].slice(0, 500), model };
+    }
+
+    if (!parsed.name || parsed.amount == null) {
+      last = { reason: 'missing_fields', raw: match[0].slice(0, 500), model };
+      continue;
+    }
+
+    return { data: parsed, model };
   }
 
-  if (parsed.error) return { reason: 'model_says_no_payment', raw: match[0].slice(0, 500), model };
-  if (!parsed.name || parsed.amount == null) {
-    return { reason: 'missing_fields', raw: match[0].slice(0, 500), model };
-  }
-  return { data: parsed, model };
+  return last;
 }
 
 export async function onRequestPost({ request, env }) {
