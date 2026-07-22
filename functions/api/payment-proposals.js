@@ -9,7 +9,12 @@
 
 const PAYMENTS_KEY = 'payments:list';
 
-const AI_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+// Zkouší se popořadě — když je model zrušený nebo přetížený, přejde se na další.
+const AI_MODELS = [
+  '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+  '@cf/meta/llama-3.1-8b-instruct-fast',
+  '@cf/meta/llama-4-scout-17b-16e-instruct',
+];
 
 const AI_SYSTEM = `Jsi extraktor platebních informací z emailů. Vrať POUZE validní JSON bez markdown bloků:
 {"name":"název služby","amount":123,"dueDate":"YYYY-MM-DD","note":"stručná poznámka"}
@@ -30,21 +35,27 @@ function json(data, status = 200) {
 
 /** Vrací { data } při úspěchu, jinak { reason, raw } pro diagnostiku. */
 async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
+  const messages = [
+    { role: 'system', content: AI_SYSTEM },
+    {
+      role: 'user',
+      content: `Od: ${emailFrom}\nPředmět: ${emailSubject}\n\n${emailBody.slice(0, 3000)}`,
+    },
+  ];
+
   let result;
-  try {
-    result = await env.AI.run(AI_MODEL, {
-      messages: [
-        { role: 'system', content: AI_SYSTEM },
-        {
-          role: 'user',
-          content: `Od: ${emailFrom}\nPředmět: ${emailSubject}\n\n${emailBody.slice(0, 3000)}`,
-        },
-      ],
-      max_tokens: 300,
-    });
-  } catch (e) {
-    return { reason: 'ai_call_failed', raw: String(e?.message ?? e) };
+  let model;
+  const errors = [];
+  for (const candidate of AI_MODELS) {
+    try {
+      result = await env.AI.run(candidate, { messages, max_tokens: 300 });
+      model = candidate;
+      break;
+    } catch (e) {
+      errors.push(`${candidate}: ${String(e?.message ?? e)}`);
+    }
   }
+  if (!result) return { reason: 'ai_call_failed', raw: errors.join(' | ') };
 
   const text = result?.response ?? '';
   const match = text.match(/\{[\s\S]*?\}/);
@@ -57,11 +68,11 @@ async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
     return { reason: 'invalid_json', raw: match[0].slice(0, 500) };
   }
 
-  if (parsed.error) return { reason: 'model_says_no_payment', raw: match[0].slice(0, 500) };
+  if (parsed.error) return { reason: 'model_says_no_payment', raw: match[0].slice(0, 500), model };
   if (!parsed.name || parsed.amount == null) {
-    return { reason: 'missing_fields', raw: match[0].slice(0, 500) };
+    return { reason: 'missing_fields', raw: match[0].slice(0, 500), model };
   }
-  return { data: parsed };
+  return { data: parsed, model };
 }
 
 export async function onRequestPost({ request, env }) {
@@ -83,7 +94,7 @@ export async function onRequestPost({ request, env }) {
     }
     const parsed = await parseWithAI(env, body.emailFrom ?? '', body.emailSubject ?? '', body.emailBody);
     if (!parsed.data) {
-      return json({ error: 'no payment parsed', reason: parsed.reason, raw: parsed.raw }, 422);
+      return json({ error: 'no payment parsed', reason: parsed.reason, raw: parsed.raw, model: parsed.model }, 422);
     }
     fields = {
       ...parsed.data,
