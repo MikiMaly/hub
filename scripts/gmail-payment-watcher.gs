@@ -35,6 +35,7 @@ const SENDER_PATTERNS = [
   'spotify.com',       // Spotify
   'anthropic.com',     // Claude
   'csob.cz',           // ČSOB banka
+  'csas.cz',           // Česká sporitelna
   'generali.cz',       // Generali pojišťovna
   'vodafone.cz',       // Vodafone
   'pid.cz',            // Lítačka / PID
@@ -88,12 +89,19 @@ function checkPaymentEmails() {
       });
 
       const code = response.getResponseCode();
-      if (code === 201 || code === 422) {
-        // 201 = úspěch, 422 = AI nic nenašel v emailu → obojí označit jako zpracované
+      if (code === 201) {
         thread.addLabel(label);
-        Logger.log(`[${code}] ${emailSubject}`);
+        Logger.log(`✅ [201] NÁVRH VYTVOŘEN: ${emailSubject}`);
+      } else if (code === 422) {
+        // AI v mailu nenašel platbu → označit, ať se nezkouší znovu
+        thread.addLabel(label);
+        Logger.log(`⏭️ [422] bez platby: ${emailSubject}`);
+      } else if (code === 503) {
+        // Chybí AI binding — NEOZNAČOVAT, ať se po opravě zkusí znovu
+        Logger.log(`❌ [503] CHYBÍ AI BINDING v Cloudflare — přeruším: ${response.getContentText()}`);
+        return;
       } else {
-        Logger.log(`[CHYBA ${code}] ${emailSubject}: ${response.getContentText()}`);
+        Logger.log(`❌ [${code}] ${emailSubject}: ${response.getContentText()}`);
       }
     } catch (e) {
       Logger.log(`[VÝJIMKA] ${emailSubject}: ${e.message}`);

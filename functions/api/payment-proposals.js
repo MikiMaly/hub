@@ -29,7 +29,6 @@ function json(data, status = 200) {
 }
 
 async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
-  if (!env.AI) return null;
   try {
     const result = await env.AI.run(AI_MODEL, {
       messages: [
@@ -65,6 +64,9 @@ export async function onRequestPost({ request, env }) {
   // Pokud přišel surový email, zkus AI parsing
   let fields = body;
   if (body.emailBody && (!body.name || !body.amount)) {
+    if (!env.AI) {
+      return json({ error: 'Workers AI binding "AI" not configured in Cloudflare Pages' }, 503);
+    }
     const parsed = await parseWithAI(env, body.emailFrom ?? '', body.emailSubject ?? '', body.emailBody);
     if (!parsed) {
       return json({ error: 'AI parsing failed or no payment found in email' }, 422);
