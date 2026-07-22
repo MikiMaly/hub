@@ -28,6 +28,10 @@ id = "8dc4d9cbf2054be280041a33f2cd785e"
 binding = "PAYMENTS"
 id = "baa2b4a037824c1590ad4035b97d6000"
 
+# Workers AI — parsování platebních emailů (free tier: 10 000 neuronů/den)
+[ai]
+binding = "AI"
+
 # D1 binding pro gekos sub-app (sdílí databázi s gekos-cron Workerem)
 [[d1_databases]]
 binding = "DB"
