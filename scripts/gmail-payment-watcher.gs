@@ -132,6 +132,38 @@ function dryRun() {
 }
 
 /**
+ * TEST — pošle N nejnovějších mailů z posledních 30 dní na webhook,
+ * ale NEOZNAČÍ je labelem, takže se test dá opakovat.
+ * Vypíše, co endpoint vrátil včetně rozparsovaného návrhu.
+ */
+function testSend(count) {
+  const secret = getSecret();
+  const fromParts = SENDER_PATTERNS.map(s => `from:${s}`).join(' OR ');
+  const kwParts = PAYMENT_KEYWORDS.map(k => `"${k}"`).join(' OR ');
+  const excludeParts = EXCLUDE_SUBJECT.map(k => `-subject:"${k}"`).join(' ');
+  const query = `(${fromParts}) (${kwParts}) ${excludeParts} newer_than:30d`;
+
+  const threads = GmailApp.search(query, 0, count || 3);
+  Logger.log(`Testuji ${threads.length} mailů (nic se neoznačí):\n`);
+
+  for (const thread of threads) {
+    const msg = thread.getMessages()[0];
+    const response = UrlFetchApp.fetch(WEBHOOK_URL, {
+      method: 'post',
+      contentType: 'application/json',
+      muteHttpExceptions: true,
+      headers: { 'Authorization': `Bearer ${secret}` },
+      payload: JSON.stringify({
+        emailFrom: msg.getFrom(),
+        emailSubject: msg.getSubject(),
+        emailBody: msg.getPlainBody(),
+      }),
+    });
+    Logger.log(`[${response.getResponseCode()}] ${msg.getSubject()}\n    ${response.getContentText()}\n`);
+  }
+}
+
+/**
  * TEST — ověří, že webhook přijímá secret (pošle úmyslně neúplná data).
  * Očekávaný výsledek: 400 = secret OK. 403 = secret špatně nebo chybí redeploy.
  */
