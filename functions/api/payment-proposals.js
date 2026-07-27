@@ -16,22 +16,33 @@ const AI_MODELS = [
   '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
 ];
 
-const AI_SYSTEM = `Jsi extraktor platebních informací z emailů. Vrať POUZE validní JSON bez markdown bloků:
-{"name":"název služby","amount":123.45,"dueDate":"YYYY-MM-DD","note":"stručná poznámka"}
+const AI_SYSTEM = `Jsi klasifikátor a extraktor platebních emailů. Vrať POUZE validní JSON bez markdown bloků:
+{"kind":"due","name":"název služby","amount":123.45,"dueDate":"YYYY-MM-DD","note":"stručná poznámka"}
 
-Pravidla:
-- name: krátký název max 30 znaků, např. "iCloud 50GB", "Spotify Premium", "Vodafone faktura", "Generali pojištění"
+NEJDŘÍV urči "kind" — druh emailu:
+- "due"  = VÝZVA K ZAPLACENÍ, kterou musí uživatel teď uhradit: faktura k úhradě,
+           "blíží se splatnost", "zaplaťte do…", platební příkaz, nedoplatek k zaplacení.
+- "paid" = POTVRZENÍ, že platba už PROBĚHLA: účtenka, "děkujeme za platbu",
+           "potvrzení objednávky", "platba přijata", "bylo strženo".
+- "none" = email NENÍ o konkrétní platbě: marketing, novinky, upozornění na
+           zabezpečení, "aktualizujte si platební údaje", "platba se nezdařila"
+           bez konkrétní částky k zaplacení, obecná sdělení.
+
+Pokud kind je "paid" nebo "none", vrať POUZE: {"kind":"paid"} nebo {"kind":"none"}.
+Nevymýšlej částku, když v emailu žádná konkrétní k ZAPLACENÍ není — radši dej "none".
+
+Jen pro kind "due" vyplň zbytek:
+- name: krátký název max 30 znaků, např. "iCloud 50GB", "Vodafone faktura", "Generali pojištění"
 - amount: číslo v CZK. POZOR na český formát — čárka je DESETINNÁ tečka, mezera odděluje tisíce:
     "59,99 Kč"    -> 59.99   (NE 5999)
     "1 250,00 Kč" -> 1250
-    "1 250 Kč"    -> 1250
     "12,50 EUR"   -> 312.5   (EUR×25)
     "9.99 USD"    -> 229.77  (USD×23)
   V JSONu piš číslo vždy s tečkou jako desetinným oddělovačem, bez měny a bez mezer.
-- dueDate: datum splatnosti ve tvaru YYYY-MM-DD. Pokud v emailu žádné datum není,
-  vrať null — NIKDY nepiš text jako "není" nebo "nespecifikováno".
-- note: jedna věta s číslem faktury, obdobím apod. (nebo prázdný řetězec)
-- Pokud email neobsahuje žádnou platbu, vrať: {"error":"no payment"}`;
+  Musí to být skutečná částka k zaplacení, ne cena za jednotku ani zůstatek.
+- dueDate: datum splatnosti ve tvaru YYYY-MM-DD. Když žádné není, vrať null —
+  NIKDY nepiš text jako "není" nebo "nespecifikováno".
+- note: jedna věta s číslem faktury, obdobím apod. (nebo prázdný řetězec)`;
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -110,9 +121,11 @@ async function parseWithAI(env, emailFrom, emailSubject, emailBody) {
       continue;
     }
 
-    // Věcné rozhodnutí modelu — eskalovat nemá smysl, jen by to stálo navíc.
-    if (parsed.error) {
-      return { reason: 'model_says_no_payment', raw: match[0].slice(0, 500), model };
+    // Klasifikace — jen "due" je výzva k zaplacení, kterou zakládáme.
+    // "paid" (potvrzení) a "none" (šum) jsou věcná rozhodnutí, neeskalujeme.
+    const kind = parsed.kind ?? (parsed.error ? 'none' : 'due');
+    if (kind === 'paid' || kind === 'none') {
+      return { skip: kind, model };
     }
 
     const amount = normalizeAmount(parsed.amount);
@@ -157,6 +170,10 @@ async function handlePost({ request, env }) {
       return json({ error: 'Workers AI binding "AI" not configured in Cloudflare Pages' }, 503);
     }
     const parsed = await parseWithAI(env, body.emailFrom ?? '', body.emailSubject ?? '', body.emailBody);
+    // Potvrzení o platbě / šum — mail se označí jako vyřízený, ale nezakládá návrh.
+    if (parsed.skip) {
+      return json({ ok: true, skipped: parsed.skip, model: parsed.model }, 200);
+    }
     if (!parsed.data) {
       return json({ error: 'no payment parsed', reason: parsed.reason, raw: parsed.raw, model: parsed.model }, 422);
     }

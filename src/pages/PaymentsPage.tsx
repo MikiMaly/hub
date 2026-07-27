@@ -71,6 +71,7 @@ function getDaysUntil(date: Date): number {
 }
 
 function formatDate(date: Date): string {
+  if (isNaN(date.getTime())) return 'bez data'
   return `${date.getDate()}. ${MONTHS_GEN[date.getMonth()]} ${date.getFullYear()}`
 }
 

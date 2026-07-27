@@ -91,9 +91,13 @@ function checkPaymentEmails() {
       const code = response.getResponseCode();
       if (code === 201) {
         thread.addLabel(label);
-        Logger.log(`✅ [201] NÁVRH VYTVOŘEN: ${emailSubject}`);
+        Logger.log(`✅ [201] VÝZVA K PLATBĚ: ${emailSubject}`);
+      } else if (code === 200) {
+        // Potvrzení o platbě nebo šum — vyřízeno, ale bez návrhu
+        thread.addLabel(label);
+        Logger.log(`⏭️ [200] přeskočeno: ${emailSubject}`);
       } else if (code === 422) {
-        // AI v mailu nenašel platbu → označit, ať se nezkouší znovu
+        // AI nedokázal mail rozparsovat → označit, ať se nezkouší znovu
         thread.addLabel(label);
         Logger.log(`⏭️ [422] bez platby: ${emailSubject}`);
       } else if (code === 503) {
