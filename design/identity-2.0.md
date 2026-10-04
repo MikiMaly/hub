@@ -10,6 +10,18 @@ Tmavé sklo v noci, uvnitř roste zeleň. Projekty, rostliny i gekoni jsou věci
 co rostou. Zelená vede, mint a akvamarín ji chladí, malina je jediný teplý
 akcent. Žádné modré/fialové orby z verze 1, žádné náhodné Tailwind barvy.
 
+## Publikum (ovlivňuje tón a obsah)
+
+- **Veřejná landing page (`/`)** je pro veřejnost a potenciální zaměstnavatele.
+  Profesionální vizitka: kdo jsem, co umím, veřejné projekty. Žádné osobní údaje
+  ani lokalita (např. "Praha"), žádné soukromé věci z privátní sekce kromě
+  zamčených názvů.
+- **Privátní sekce (`/private`)** je primárně pro mě (přihlášení heslem = admin).
+  Tón může být osobní a neformální ("Ahoj. Co dnes?").
+- **Ostatní lidé** se do privátní sekce dostanou jen přes pozvánku, případně
+  později přes vlastní user účet. Vidí jen to, co jim role dovolí (admin věci
+  jako Platby a Pozvánky ne).
+
 ## Paleta (jediný zdroj: `src/styles/theme.css`, blok „Paleta")
 
 | Token | Hex (návrh) | Role |

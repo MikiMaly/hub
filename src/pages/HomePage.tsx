@@ -129,7 +129,7 @@ export default function HomePage() {
             transition={{ duration: 0.5 }}
             className="hub-eyebrow mb-6"
           >
-            Osobní hub · Praha
+            Osobní hub
           </motion.div>
 
           <motion.h1
