@@ -13,6 +13,14 @@
 - [ ] Napojit `uwd.mmaly.cz` — webapp pro online stahování videí (RPi4 + Cloudflare Tunnel)
 - [ ] Server mód webappu (v7.2) — stahování na server + HTTP download pro uživatele
 
+## Uživatelské účty a vlastní data (budoucnost)
+Dnes session nese jen roli (`admin` / `user`), ne identitu člověka, a data jsou společná.
+- [ ] Session s identitou uživatele (`user_id` v payloadu), invite kód → vlastní user účet
+- [ ] Zálivka per uživatel — sloupec `owner_id` v `plants` (+ filtr ve všech `/api/zalivka` dotazech); dnes všichni s pozvánkou vidí a mažou moje kytky
+- [ ] Spirála per uživatel — přesun z localStorage do D1 s `owner_id` (dnes jen v jednom prohlížeči)
+- [ ] Rozhodnout u gekonů: zůstanou jen moje (skrýt pro user účty), nebo i read-only / sdílené
+- [ ] Do té doby zvážit: pozvaným neukazovat moje data (Zálivka, Gekoni), jen moduly, které jsou jejich
+
 ## Vylepšení (rozhodnuto pozdějc)
 
 ### Bezpečnost
