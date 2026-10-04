@@ -111,7 +111,7 @@ export default function PrivatePage() {
         animate={{ y: 0 }}
         className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border"
       >
-        <div className="max-w-[1600px] mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div
               className="flex items-center gap-2 cursor-pointer"
@@ -147,13 +147,13 @@ export default function PrivatePage() {
       </motion.nav>
 
       {/* Hlavička držená nízko, ať je mřížka vidět hned po načtení i na notebooku. */}
-      <section className="pt-28 pb-6 px-6 relative overflow-hidden">
+      <section className="pt-28 pb-6 px-6 lg:px-10 relative overflow-hidden">
         <motion.div
           animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute -top-32 right-1/4 w-96 h-96 rounded-full bg-primary/10 blur-[120px] pointer-events-none"
         />
-        <div className="max-w-[1600px] mx-auto relative z-10">
+        <div className="mx-auto px-0 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <div className="flex items-baseline gap-3 flex-wrap">
               <div className="flex items-center gap-3">
@@ -168,10 +168,10 @@ export default function PrivatePage() {
         </div>
       </section>
 
-      <section className="pb-12 px-6">
+      <section className="pb-12 px-6 lg:px-10">
         {/* Mřížka místo seznamu pod sebou — na šířku monitoru se tak vejde všechno
             najednou a nemusím kvůli pěti položkám scrollovat celou stránku. */}
-        <div className="max-w-[1600px] mx-auto grid gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 items-start">
+        <div className="mx-auto grid gap-6 sm:grid-cols-2 xl:grid-cols-3 items-start">
           {cards.map((card, index) => (
             <motion.div
               key={card.id}
@@ -188,7 +188,7 @@ export default function PrivatePage() {
                 className={
                   'relative w-full h-full text-left rounded-2xl bg-card border border-border ' +
                   'group-hover:border-primary/50 transition-all overflow-hidden ' +
-                  (card.small ? 'p-4' : 'p-6')
+                  (card.small ? 'p-5' : 'p-7 min-h-[11rem]')
                 }
               >
                 <div
@@ -204,7 +204,7 @@ export default function PrivatePage() {
                     className={
                       'rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 ' +
                       'flex items-center justify-center shrink-0 ' +
-                      (card.small ? 'w-9 h-9 text-lg' : 'w-12 h-12 text-2xl')
+                      (card.small ? 'w-11 h-11 text-xl' : 'w-16 h-16 text-3xl')
                     }
                   >
                     {card.id === 'invites' ? (
@@ -219,7 +219,7 @@ export default function PrivatePage() {
                       <h3
                         className={
                           'text-primary inline-flex items-center gap-1.5 ' +
-                          (card.small ? 'text-base' : 'text-xl')
+                          (card.small ? 'text-lg' : 'text-2xl')
                         }
                         style={{ fontWeight: 600 }}
                       >
@@ -240,7 +240,7 @@ export default function PrivatePage() {
                     <p
                       className={
                         'text-muted-foreground leading-relaxed ' +
-                        (card.small ? 'text-xs' : 'text-sm mb-3')
+                        (card.small ? 'text-sm' : 'text-base mb-4')
                       }
                     >
                       {card.description}
@@ -266,8 +266,8 @@ export default function PrivatePage() {
         </div>
       </section>
 
-      <footer className="py-8 px-6 border-t border-border">
-        <div className="max-w-[1600px] mx-auto text-center">
+      <footer className="py-8 px-6 lg:px-10 border-t border-border">
+        <div className="mx-auto text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
             <span className="text-xl text-foreground">mmaly</span>
             <span className="text-xl text-primary">.cz</span>
