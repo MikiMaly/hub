@@ -1,15 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate, useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { motion } from 'motion/react'
 import { ArrowLeft, Eye, EyeOff, Lock, Shield } from 'lucide-react'
 import { isAuthed } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { LogoMark, TopBar } from '../ui/brand'
 
 type Tab = 'password' | 'code'
 
 export default function LoginPage() {
-  useDocumentTitle('Přihlášení — mmaly.cz')
-  const navigate = useNavigate()
+  useDocumentTitle('Přihlášení · mmaly.cz')
   const [searchParams] = useSearchParams()
   const [tab, setTab] = useState<Tab>('password')
   const [password, setPassword] = useState('')
@@ -67,98 +67,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center px-6 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(34, 197, 94, 0.05) 1px, transparent 0)`,
-            backgroundSize: '40px 40px',
-          }}
-        />
-      </div>
-
-      <div
-        className="absolute inset-0 opacity-40 pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.12'/%3E%3C/svg%3E")`,
-          mixBlendMode: 'overlay',
-        }}
+    <div className="hub-page flex flex-col">
+      <TopBar
+        actions={
+          <Link to="/" className="hub-btn hub-btn-quiet">
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden sm:inline">Zpět na hlavní stránku</span>
+          </Link>
+        }
       />
 
-      <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-        transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-primary/20 blur-[100px] pointer-events-none"
-      />
-
-      <div className="w-full max-w-md relative z-10">
+      <main className="flex-1 grid place-items-center px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
         >
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Zpět na hlavní stránku</span>
-          </button>
-
-          <div className="p-8 rounded-2xl bg-card border border-border relative overflow-hidden">
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")`,
-                mixBlendMode: 'overlay',
-              }}
-            />
-
-            <div className="text-center mb-8 relative z-10">
+          <div className="hub-card p-6 sm:p-8">
+            <div className="text-center mb-8">
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-                className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center"
+                initial={{ scale: 0.6, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.15, type: 'spring', stiffness: 220 }}
+                className="mx-auto mb-5 w-fit"
               >
-                <Shield className="w-8 h-8 text-primary" />
+                <LogoMark size={56} />
               </motion.div>
-              <h1 className="mb-2" style={{ fontSize: '2rem', fontWeight: 600 }}>
-                Privátní sekce
-              </h1>
-              <p className="text-muted-foreground">Přihlaste se pro přístup k chráněnému obsahu</p>
+              <div className="hub-eyebrow mb-2">Privátní sekce</div>
+              <h1 className="hub-title text-3xl mb-2">Vítej zpátky</h1>
+              <p className="text-sm text-muted-foreground">Přihlas se heslem nebo kódem z pozvánky.</p>
             </div>
 
-            <div className="flex gap-1 mb-6 p-1 rounded-lg bg-secondary/40 border border-border relative z-10">
+            <div className="hub-segment w-full mb-6" role="tablist">
               <button
                 type="button"
+                role="tab"
+                aria-selected={tab === 'password'}
                 onClick={() => switchTab('password')}
-                className={`flex-1 px-4 py-2 rounded-md text-sm transition-colors ${
-                  tab === 'password'
-                    ? 'bg-muted text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
               >
                 Heslo
               </button>
               <button
                 type="button"
+                role="tab"
+                aria-selected={tab === 'code'}
                 onClick={() => switchTab('code')}
-                className={`flex-1 px-4 py-2 rounded-md text-sm transition-colors ${
-                  tab === 'code'
-                    ? 'bg-muted text-foreground'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
               >
                 Pozvánka
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
+            <form onSubmit={handleSubmit} className="space-y-5">
               {tab === 'password' ? (
                 <div>
-                  <label htmlFor="password" className="block mb-2">
+                  <label htmlFor="password" className="hub-label block mb-2">
                     Heslo
                   </label>
                   <div className="relative">
@@ -167,15 +130,16 @@ export default function LoginPage() {
                       type={showPassword ? 'text' : 'password'}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 pr-12 rounded-lg bg-input-background border border-border focus:border-primary focus:outline-none transition-colors"
+                      className="hub-input hub-input-lg pr-12"
                       placeholder="••••••••"
                       autoComplete="current-password"
+                      autoFocus
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-mint transition-colors"
                       aria-label={showPassword ? 'Skrýt heslo' : 'Zobrazit heslo'}
                     >
                       {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -184,7 +148,7 @@ export default function LoginPage() {
                 </div>
               ) : (
                 <div>
-                  <label htmlFor="code" className="block mb-2">
+                  <label htmlFor="code" className="hub-label block mb-2">
                     Kód pozvánky
                   </label>
                   <input
@@ -192,10 +156,11 @@ export default function LoginPage() {
                     type="text"
                     value={code}
                     onChange={(e) => setCode(e.target.value)}
-                    className="w-full px-4 py-3 rounded-lg bg-input-background border border-border focus:border-primary focus:outline-none transition-colors font-mono uppercase tracking-widest"
+                    className="hub-input hub-input-lg font-mono uppercase tracking-[0.3em] text-center text-mint"
                     placeholder="ABCD-EF3G"
                     autoComplete="off"
                     spellCheck={false}
+                    autoFocus
                     required
                   />
                 </div>
@@ -203,48 +168,41 @@ export default function LoginPage() {
 
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
+                  initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+                  className="px-3 py-2.5 rounded-xl bg-raspberry/10 border border-raspberry/25 text-sm text-raspberry"
+                  role="alert"
                 >
                   {error}
                 </motion.div>
               )}
 
-              <motion.button
-                type="submit"
-                disabled={isLoading}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <button type="submit" disabled={isLoading} className="hub-btn hub-btn-primary hub-btn-lg w-full">
                 {isLoading ? (
                   <>
-                    <motion.div
+                    <motion.span
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
                       className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
                     />
-                    <span>Ověřování...</span>
+                    Ověřuji…
                   </>
                 ) : (
                   <>
                     <Lock className="w-5 h-5" />
-                    <span>Přihlásit se</span>
+                    Přihlásit se
                   </>
                 )}
-              </motion.button>
+              </button>
             </form>
           </div>
 
-          <div className="mt-6 text-center">
-            <div className="flex items-center justify-center gap-2 text-muted-foreground">
-              <Lock className="w-4 h-4" />
-              <span className="text-sm">Zabezpečeno end-to-end šifrováním</span>
-            </div>
-          </div>
+          <p className="mt-6 flex items-center justify-center gap-2 hub-label">
+            <Shield className="w-3.5 h-3.5 text-primary" />
+            Šifrované spojení · podepsaná session
+          </p>
         </motion.div>
-      </div>
+      </main>
     </div>
   )
 }

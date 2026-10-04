@@ -7,10 +7,12 @@ import { geckoRoutes } from '@gekos/pages/routes'
 import PaymentsPage from './pages/PaymentsPage'
 import ZalivkaPage from './pages/ZalivkaPage'
 import SpiralaPage from './pages/SpiralaPage'
+import BrandPage from './pages/BrandPage'
 
 export const router = createBrowserRouter([
   { path: '/', element: <HomePage /> },
   { path: '/login', element: <LoginPage /> },
+  { path: '/brand', element: <BrandPage /> },
   { path: '/private', element: <PrivatePage /> },
   { path: '/private/invites', element: <InvitesPage /> },
   { path: '/private/payments', element: <PaymentsPage /> },
