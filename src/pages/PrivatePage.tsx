@@ -60,6 +60,15 @@ export default function PrivatePage() {
       tags: ['d1', 'react'],
       href: '/private/zalivka',
     },
+    {
+      id: 'spirala',
+      icon: '🌀',
+      title: 'Spirála',
+      description:
+        'Časová osa života jako spirála — co, kde a s kým, rok po roce a stejná roční období nad sebou.',
+      tags: ['prototyp', 'canvas'],
+      href: '/private/spirala',
+    },
     ...(admin ? [{
       id: 'payments',
       icon: '💳',
