@@ -48,6 +48,15 @@ export default function PrivatePage() {
       tags: ['d1', 'react'],
       href: '/private/geckos',
     },
+    {
+      id: 'zalivka',
+      icon: '🪴',
+      title: 'Zálivka',
+      description:
+        'Kdy a kolik zalévat — interval z druhu, květináče, světla a období, objem vody v ml a historie zálivek.',
+      tags: ['react', 'prototyp'],
+      href: '/private/zalivka',
+    },
     ...(admin ? [{
       id: 'payments',
       icon: '💳',
