@@ -198,7 +198,6 @@ export default function ZalivkaPage() {
   const [plants, setPlants] = useState<Plant[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [addOpen, setAddOpen] = useState(false)
 
   // historie: id rostliny → zápisy (undefined/null = ještě se načítá)
   const [openHistory, setOpenHistory] = useState<number | null>(null)
@@ -312,7 +311,6 @@ export default function ZalivkaPage() {
         }),
       })
       setFName('')
-      setAddOpen(false)
       await load()
     })
 
@@ -320,7 +318,7 @@ export default function ZalivkaPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-5xl mx-auto px-6 py-10">
+      <div className="max-w-[1600px] mx-auto px-6 py-6">
         <button
           onClick={() => navigate('/private')}
           className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground mb-6"
@@ -356,19 +354,15 @@ export default function ZalivkaPage() {
           <Tile n={plants.length} k="Rostlin celkem" tone="all" />
         </section>
 
-        <div className="rounded-2xl border border-border bg-card mb-7">
-          <button
-            onClick={() => setAddOpen((o) => !o)}
-            className="flex items-center gap-2 w-full px-5 py-4 text-left"
-            aria-expanded={addOpen}
-          >
+        {/* Formulář je pořád rozbalený — na šířku monitoru se vejde do jedné řady
+            a klikat na rozbalení pokaždé, když přibude rostlina, nemá smysl. */}
+        <div className="rounded-2xl border border-border bg-card mb-6">
+          <div className="flex items-center gap-2 px-5 pt-4">
             <Plus className="w-4 h-4 text-primary shrink-0" />
             <span style={{ fontWeight: 600 }}>Přidat rostlinu</span>
-            <span className="ml-auto text-muted-foreground">{addOpen ? '−' : '+'}</span>
-          </button>
+          </div>
 
-          {addOpen && (
-            <div className="px-5 pb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="px-5 py-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 items-end">
               <Field label="Název">
                 <input
                   value={fName}
@@ -430,7 +424,6 @@ export default function ZalivkaPage() {
                 </button>
               </div>
             </div>
-          )}
         </div>
 
         <div className="flex items-baseline gap-2 mb-4">
@@ -448,7 +441,7 @@ export default function ZalivkaPage() {
             </p>
           </div>
         ) : (
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 items-start">
             {rows.map(({ p, c }, i) => (
               <motion.div
                 key={p.id}
@@ -461,7 +454,7 @@ export default function ZalivkaPage() {
                 }
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="truncate" style={{ fontWeight: 600 }}>{p.name}</span>
+                  <span className="truncate" style={{ fontWeight: 600 }} title={p.name}>{p.name}</span>
                   <span
                     className={
                       'text-[0.68rem] uppercase tracking-wide px-2 py-1 rounded-full shrink-0 ' +
