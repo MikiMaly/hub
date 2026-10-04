@@ -131,11 +131,15 @@ POST /api/login {code}       → invite code (KV lookup)
 functions/_auth.js — podpis a ověření session (HMAC-SHA256, klíč = HUB_PASSWORD)
   ⚠ změna HUB_PASSWORD odhlásí všechny přihlášené (admin i invite)
 
-functions/_middleware.js → /private/*
+functions/_middleware.js → /private/* + datová API
   - bez platné hub_session → 302 /login?from=...
   - /private/invites bez role admin → 302 /private
+  - /api/geckos/* a /api/zalivka/* bez session → 403 JSON (ne redirect — fetch by
+    si redirect na login spolkl a tvářil se, že odpověď dorazila)
+  - cesta se před porovnáním normalizuje (%2F, zdvojená lomítka)
 ```
 
-API endpointy (`/api/payments`, `/api/signals` GET, `/api/invite`) ověřují tutéž podepsanou
+Zbylé API endpointy (`/api/payments`, `/api/signals` GET, `/api/invite`) chtějí roli admin
+nebo ověřují tutéž podepsanou
 session. Webhooky (`/api/signals` POST, `/api/payment-proposals`) používají Bearer tokeny.
 Klientský guard (`src/lib/auth.ts`) čte `hub_ui` / `hub_admin_ui` pro UX. Reálný gate je server middleware.
