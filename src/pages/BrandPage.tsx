@@ -121,7 +121,8 @@ export default function BrandPage() {
             <div>
               <div className="hub-label mb-2">Display · Space Grotesk 700</div>
               <div className="hub-display text-5xl sm:text-6xl">
-                Stavím věci, <span className="hub-text-aurora">co rostou.</span>
+                Mikoláš <span className="hub-text-aurora">Malý</span>
+                <span className="text-raspberry">.</span>
               </div>
             </div>
             <div>

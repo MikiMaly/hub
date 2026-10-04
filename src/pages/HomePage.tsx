@@ -138,9 +138,8 @@ export default function HomePage() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="hub-display text-[2.75rem] sm:text-7xl lg:text-8xl"
           >
-            Mikoláš Malý<span className="text-raspberry">.</span>
-            <br />
-            <span className="hub-text-aurora">Stavím věci, co rostou.</span>
+            Mikoláš <span className="hub-text-aurora">Malý</span>
+            <span className="text-raspberry">.</span>
           </motion.h1>
 
           <motion.ul
