@@ -1,19 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
-import { ArrowLeft, Droplet, Plus, Sprout, Trash2 } from 'lucide-react'
+import { ArrowLeft, Droplet, History, Plus, Sprout, Trash2 } from 'lucide-react'
 import { isAuthed } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 
-// Port prototypu "Zálivka" (artefakt z 28. 7. 2026) do hubu. Výpočetní model
-// je zachovaný 1:1, jen je přepsaný do Reactu a obarvený theme tokeny hubu.
-//
-// POZOR: data žijou v localStorage, tedy per prohlížeč. Na mobilu uvidíš jiné
-// rostliny než na desktopu a smazaná data se nevrátí. Na trvalé úložiště to
-// chce D1 tabulky + Pages Functions, stejně jako to má gekos.
+// Modul Zálivka. Výpočetní model pochází z prototypu (artefakt 28. 7. 2026)
+// a je zachovaný 1:1; data ale žijou v D1 (tabulky plants a watering_events,
+// viz schema/zalivka.sql), ne v localStorage — aby seznam seděl na mobilu
+// i na desktopu a aby šlo zpětně vidět, jestli se interval dodržuje.
 
 const DAY = 86_400_000
-const STORAGE_KEY = 'zalivka.v1'
 
 type SpeciesKey =
   | 'sukulent' | 'kaktus' | 'stredomorska' | 'tropicka'
@@ -25,13 +22,13 @@ type Status = 'over' | 'soon' | 'ok'
 // base = dny mezi zálivkami ve vegetační sezóně
 // frac = podíl objemu substrátu, který padne na jednu zálivku
 const SPECIES: Record<SpeciesKey, { label: string; short: string; base: number; frac: number }> = {
-  sukulent:     { label: 'Sukulent / tučnolist',                    short: 'Sukulent',      base: 14, frac: 0.10 },
-  kaktus:       { label: 'Kaktus',                                  short: 'Kaktus',        base: 16, frac: 0.10 },
-  stredomorska: { label: 'Středomořská (rozmarýn, oliva)',           short: 'Středomořská', base: 9,  frac: 0.13 },
-  tropicka:     { label: 'Tropická pokojovka (monstera, potos)',     short: 'Tropická',      base: 6,  frac: 0.15 },
-  orchidej:     { label: 'Orchidej',                                short: 'Orchidej',      base: 8,  frac: 0.12 },
-  kapradina:    { label: 'Kapradina / vlhkomilná (calathea)',        short: 'Kapradina',     base: 3,  frac: 0.20 },
-  bylinka:      { label: 'Bylinka (bazalka, petržel)',               short: 'Bylinka',       base: 2,  frac: 0.20 },
+  sukulent:     { label: 'Sukulent / tučnolist',                short: 'Sukulent',     base: 14, frac: 0.10 },
+  kaktus:       { label: 'Kaktus',                              short: 'Kaktus',       base: 16, frac: 0.10 },
+  stredomorska: { label: 'Středomořská (rozmarýn, oliva)',       short: 'Středomořská', base: 9,  frac: 0.13 },
+  tropicka:     { label: 'Tropická pokojovka (monstera, potos)', short: 'Tropická',     base: 6,  frac: 0.15 },
+  orchidej:     { label: 'Orchidej',                            short: 'Orchidej',     base: 8,  frac: 0.12 },
+  kapradina:    { label: 'Kapradina / vlhkomilná (calathea)',    short: 'Kapradina',    base: 3,  frac: 0.20 },
+  bylinka:      { label: 'Bylinka (bazalka, petržel)',           short: 'Bylinka',      base: 2,  frac: 0.20 },
 }
 
 const MATERIALS: Record<MaterialKey, { label: string; f: number }> = {
@@ -48,14 +45,23 @@ const LIGHT: Record<LightKey, { label: string; f: number }> = {
 }
 
 type Plant = {
-  id: string
+  id: number
   name: string
-  druh: SpeciesKey
-  pot: number           // Ø květináče v cm
-  mat: MaterialKey
+  species: SpeciesKey
+  pot_cm: number
+  material: MaterialKey
   light: LightKey
-  last: number          // timestamp poslední zálivky
-  log: number           // kolikrát zalito celkem
+  created_at: string
+  last_ts: string | null
+  water_count: number
+}
+
+type WateringEvent = {
+  id: number
+  plant_id: number
+  ts: string
+  ml: number | null
+  note: string | null
 }
 
 function seasonInfo(month: number): { key: string; f: number } {
@@ -76,8 +82,8 @@ function potFactor(d: number): number {
 type Computed = {
   interval: number
   ml: number
-  due: Date
-  days: number
+  due: Date | null        // null = rostlina ještě nebyla zalita
+  days: number | null
   status: Status
   season: { key: string; f: number }
   f: { base: number; pot: number; mat: number; light: number; season: number }
@@ -85,53 +91,31 @@ type Computed = {
 
 function compute(p: Plant, now = new Date()): Computed {
   const s = seasonInfo(now.getMonth())
-  const dr = SPECIES[p.druh]
+  const dr = SPECIES[p.species]
   const interval = Math.max(
     1,
-    Math.round(dr.base * potFactor(p.pot) * MATERIALS[p.mat].f * LIGHT[p.light].f * s.f),
+    Math.round(dr.base * potFactor(p.pot_cm) * MATERIALS[p.material].f * LIGHT[p.light].f * s.f),
   )
 
   // Objem substrátu ≈ π·(Ø/2)²·výška, výška ≈ 0.8·Ø. Z toho frac na zálivku,
   // zaokrouhleno na desítky ml — "zalít, dokud neodteče do misky".
-  const volMl = Math.PI * (p.pot / 2) ** 2 * (0.8 * p.pot)
+  const volMl = Math.PI * (p.pot_cm / 2) ** 2 * (0.8 * p.pot_cm)
   const ml = Math.max(20, Math.round((volMl * dr.frac) / 10) * 10)
 
-  const due = new Date(p.last + interval * DAY)
+  const f = {
+    base: dr.base, pot: potFactor(p.pot_cm),
+    mat: MATERIALS[p.material].f, light: LIGHT[p.light].f, season: s.f,
+  }
+
+  // Založení rostliny není zálivka, takže bez jediného zápisu je termín "hned".
+  if (!p.last_ts) return { interval, ml, due: null, days: null, status: 'over', season: s, f }
+
+  const due = new Date(new Date(p.last_ts).getTime() + interval * DAY)
   const days = Math.ceil((due.getTime() - now.getTime()) / DAY)
   // Dnešní termín je stejně naléhavý jako prošlý — proto 0 padá do 'over'.
   const status: Status = days <= 0 ? 'over' : days <= 2 ? 'soon' : 'ok'
 
-  return {
-    interval, ml, due, days, status, season: s,
-    f: { base: dr.base, pot: potFactor(p.pot), mat: MATERIALS[p.mat].f, light: LIGHT[p.light].f, season: s.f },
-  }
-}
-
-function newId(): string {
-  return Math.random().toString(36).slice(2, 9)
-}
-
-function seedPlants(): Plant[] {
-  const t = Date.now()
-  return [
-    { id: newId(), name: 'Monstera u okna',        druh: 'tropicka',  pot: 22, mat: 'plast',    light: 'neprime',  last: t - 6 * DAY, log: 6 },
-    { id: newId(), name: 'Echeverie',              druh: 'sukulent',  pot: 11, mat: 'terakota', light: 'slunce',   last: t - 9 * DAY, log: 3 },
-    { id: newId(), name: 'Kapradina v koupelně',   druh: 'kapradina', pot: 16, mat: 'plast',    light: 'polostin', last: t - 1 * DAY, log: 12 },
-    { id: newId(), name: 'Bazalka',                druh: 'bylinka',   pot: 13, mat: 'plast',    light: 'slunce',   last: t - 2 * DAY, log: 8 },
-    { id: newId(), name: 'Fíkus Benjamin',         druh: 'tropicka',  pot: 26, mat: 'glazura',  light: 'neprime',  last: t - 3 * DAY, log: 5 },
-    { id: newId(), name: 'Orchidej Phalaenopsis',  druh: 'orchidej',  pot: 12, mat: 'plast',    light: 'neprime',  last: t - 5 * DAY, log: 9 },
-  ]
-}
-
-function loadPlants(): Plant[] | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? (parsed as Plant[]) : null
-  } catch {
-    return null    // privátní okno, zakázané site data — jedeme dál bez historie
-  }
+  return { interval, ml, due, days, status, season: s, f }
 }
 
 function denWord(n: number): string {
@@ -147,17 +131,21 @@ function plantWord(n: number): string {
   return 'rostlin'
 }
 
-function relDays(t: number): string {
-  const d = Math.floor((Date.now() - t) / DAY)
+function relDays(iso: string): string {
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / DAY)
   if (d <= 0) return 'dnes'
   if (d === 1) return 'včera'
-  // 7. pád, ne 2. — "před 9 dny", ne "před 9 dní" (denWord dává tvar pro "za N…").
+  // 7. pád, ne 2. — "před 9 dny", ne "před 9 dní".
   return `před ${d} dny`
 }
 
 const dayMonth = new Intl.DateTimeFormat('cs-CZ', { day: 'numeric', month: 'numeric' })
+const dayMonthTime = new Intl.DateTimeFormat('cs-CZ', {
+  day: 'numeric', month: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit',
+})
 
 function whenText(c: Computed): string {
+  if (c.days === null) return 'ještě nezalito'
   if (c.days < 0) return `po termínu o ${Math.abs(c.days)} ${denWord(c.days)}`
   if (c.days === 0) return 'termín dnes'
   if (c.days === 1) return 'zítra'
@@ -165,6 +153,7 @@ function whenText(c: Computed): string {
 }
 
 function bigText(c: Computed): string {
+  if (c.days === null) return '—'
   if (c.days < 0) return `−${Math.abs(c.days)} d`
   if (c.days === 0) return 'dnes'
   return `${c.days} d`
@@ -190,39 +179,52 @@ const STATUS_BIG: Record<Status, string> = {
   ok:   'text-emerald-600 dark:text-emerald-400',
 }
 
+async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`/api/zalivka${path}`, {
+    ...init,
+    headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`${res.status} ${res.statusText}: ${text}`)
+  }
+  return res.json() as Promise<T>
+}
+
 export default function ZalivkaPage() {
   useDocumentTitle('Zálivka — mmaly.cz')
   const navigate = useNavigate()
   const [ready, setReady] = useState(false)
   const [plants, setPlants] = useState<Plant[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
   const [addOpen, setAddOpen] = useState(false)
+
+  // historie: id rostliny → zápisy (undefined/null = ještě se načítá)
+  const [openHistory, setOpenHistory] = useState<number | null>(null)
+  const [history, setHistory] = useState<Record<number, WateringEvent[] | null>>({})
 
   // formulář
   const [fName, setFName] = useState('')
-  const [fDruh, setFDruh] = useState<SpeciesKey>('tropicka')
+  const [fSpecies, setFSpecies] = useState<SpeciesKey>('tropicka')
   const [fPot, setFPot] = useState('18')
-  const [fMat, setFMat] = useState<MaterialKey>('plast')
+  const [fMaterial, setFMaterial] = useState<MaterialKey>('plast')
   const [fLight, setFLight] = useState<LightKey>('neprime')
+
+  const load = useCallback(async () => {
+    const r = await api<{ plants: Plant[] }>('')
+    setPlants(r.plants)
+  }, [])
 
   useEffect(() => {
     if (!isAuthed()) {
       navigate('/login?from=/private/zalivka', { replace: true })
       return
     }
-    // Prázdno, ne ukázka — rostliny si naklikám sám. Demo sedmikrásky
-    // jsou pod tlačítkem v prázdném stavu, kdyby si chtěl někdo osahat výpočet.
-    setPlants(loadPlants() ?? [])
-    setReady(true)
-  }, [navigate])
-
-  const persist = useCallback((next: Plant[]) => {
-    setPlants(next)
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    } catch {
-      // Úložiště nejde zapsat (privátní okno) — stav zůstane jen v paměti.
-    }
-  }, [])
+    load()
+      .catch((e) => setError(e instanceof Error ? e.message : String(e)))
+      .finally(() => setReady(true))
+  }, [navigate, load])
 
   const season = useMemo(() => seasonInfo(new Date().getMonth()), [])
 
@@ -230,7 +232,8 @@ export default function ZalivkaPage() {
     () =>
       plants
         .map((p) => ({ p, c: compute(p) }))
-        .sort((a, b) => a.c.days - b.c.days),
+        // Nezalité rostliny napřed, pak podle toho, komu termín hoří nejvíc.
+        .sort((a, b) => (a.c.days ?? -9999) - (b.c.days ?? -9999)),
     [plants],
   )
 
@@ -244,37 +247,74 @@ export default function ZalivkaPage() {
     return { over, soon, ok }
   }, [rows])
 
-  const water = (id: string) => {
-    persist(
-      plants.map((p) =>
-        p.id === id ? { ...p, last: Date.now(), log: (p.log ?? 0) + 1 } : p,
-      ),
-    )
+  const loadHistory = useCallback(async (plantId: number) => {
+    const r = await api<{ events: WateringEvent[] }>(`/water?plant_id=${plantId}`)
+    setHistory((h) => ({ ...h, [plantId]: r.events }))
+  }, [])
+
+  const run = async (fn: () => Promise<unknown>) => {
+    setBusy(true)
+    try {
+      await fn()
+      setError(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setBusy(false)
+    }
   }
 
-  const remove = (id: string) => {
-    persist(plants.filter((p) => p.id !== id))
-  }
+  const water = (p: Plant, c: Computed) =>
+    run(async () => {
+      await api('/water', {
+        method: 'POST',
+        body: JSON.stringify({ plant_id: p.id, ml: c.ml }),
+      })
+      await load()
+      if (openHistory === p.id) await loadHistory(p.id)
+    })
 
-  const add = () => {
-    const pot = Number.parseInt(fPot, 10)
-    const name = fName.trim() || SPECIES[fDruh].short
-    persist([
-      ...plants,
-      {
-        id: newId(),
-        name,
-        druh: fDruh,
-        pot: Number.isFinite(pot) ? Math.min(60, Math.max(6, pot)) : 18,
-        mat: fMat,
-        light: fLight,
-        last: Date.now(),
-        log: 0,
-      },
-    ])
-    setFName('')
-    setAddOpen(false)
-  }
+  const removePlant = (id: number) =>
+    run(async () => {
+      await api(`?id=${id}`, { method: 'DELETE' })
+      if (openHistory === id) setOpenHistory(null)
+      await load()
+    })
+
+  const toggleHistory = (plantId: number) =>
+    run(async () => {
+      if (openHistory === plantId) {
+        setOpenHistory(null)
+        return
+      }
+      setOpenHistory(plantId)
+      setHistory((h) => ({ ...h, [plantId]: null }))
+      await loadHistory(plantId)
+    })
+
+  const removeEvent = (ev: WateringEvent) =>
+    run(async () => {
+      await api(`/water?id=${ev.id}`, { method: 'DELETE' })
+      await Promise.all([load(), loadHistory(ev.plant_id)])
+    })
+
+  const add = () =>
+    run(async () => {
+      const pot = Number.parseInt(fPot, 10)
+      await api('', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: fName.trim() || SPECIES[fSpecies].short,
+          species: fSpecies,
+          pot_cm: Number.isFinite(pot) ? Math.min(60, Math.max(6, pot)) : 18,
+          material: fMaterial,
+          light: fLight,
+        }),
+      })
+      setFName('')
+      setAddOpen(false)
+      await load()
+    })
 
   if (!ready) return null
 
@@ -288,7 +328,7 @@ export default function ZalivkaPage() {
           <ArrowLeft className="w-4 h-4" /> Zpět
         </button>
 
-        <header className="flex items-end justify-between gap-4 flex-wrap mb-2">
+        <header className="flex items-end justify-between gap-4 flex-wrap mb-6">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-2xl shrink-0">
               🪴
@@ -303,9 +343,11 @@ export default function ZalivkaPage() {
           </span>
         </header>
 
-        <p className="text-xs text-muted-foreground mb-7">
-          Data se ukládají v tomhle prohlížeči — na jiném zařízení uvidíš jiný seznam.
-        </p>
+        {error && (
+          <p className="mb-5 px-4 py-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+            Chyba: {error}
+          </p>
+        )}
 
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-7">
           <Tile n={counts.over} k="Zalít teď" tone="over" />
@@ -338,8 +380,8 @@ export default function ZalivkaPage() {
               </Field>
               <Field label="Druh">
                 <select
-                  value={fDruh}
-                  onChange={(e) => setFDruh(e.target.value as SpeciesKey)}
+                  value={fSpecies}
+                  onChange={(e) => setFSpecies(e.target.value as SpeciesKey)}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm"
                 >
                   {(Object.keys(SPECIES) as SpeciesKey[]).map((k) => (
@@ -357,8 +399,8 @@ export default function ZalivkaPage() {
               </Field>
               <Field label="Materiál">
                 <select
-                  value={fMat}
-                  onChange={(e) => setFMat(e.target.value as MaterialKey)}
+                  value={fMaterial}
+                  onChange={(e) => setFMaterial(e.target.value as MaterialKey)}
                   className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm"
                 >
                   {(Object.keys(MATERIALS) as MaterialKey[]).map((k) => (
@@ -380,7 +422,8 @@ export default function ZalivkaPage() {
               <div className="flex items-end">
                 <button
                   onClick={add}
-                  className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm"
+                  disabled={busy}
+                  className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm disabled:opacity-50"
                   style={{ fontWeight: 600 }}
                 >
                   Přidat rostlinu
@@ -400,18 +443,12 @@ export default function ZalivkaPage() {
         {rows.length === 0 ? (
           <div className="rounded-2xl border border-border bg-card p-8 text-center">
             <Sprout className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground text-sm mb-4">
-              Zatím žádné rostliny.
+            <p className="text-muted-foreground text-sm">
+              Zatím žádné rostliny — přidej si první nahoře.
             </p>
-            <button
-              onClick={() => persist(seedPlants())}
-              className="px-4 py-2 rounded-lg border border-border text-sm text-primary hover:bg-muted"
-            >
-              Načíst ukázku
-            </button>
           </div>
         ) : (
-          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 items-start">
             {rows.map(({ p, c }, i) => (
               <motion.div
                 key={p.id}
@@ -437,9 +474,9 @@ export default function ZalivkaPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                  <span>{SPECIES[p.druh].short}</span>
-                  <span className="tabular-nums">Ø {p.pot} cm</span>
-                  <span>{MATERIALS[p.mat].label}</span>
+                  <span>{SPECIES[p.species].short}</span>
+                  <span className="tabular-nums">Ø {p.pot_cm} cm</span>
+                  <span>{MATERIALS[p.material].label}</span>
                   <span>{LIGHT[p.light].label}</span>
                 </div>
 
@@ -448,7 +485,7 @@ export default function ZalivkaPage() {
                     {bigText(c)}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {whenText(c)} · {dayMonth.format(c.due)}
+                    {whenText(c)}{c.due ? ` · ${dayMonth.format(c.due)}` : ''}
                   </span>
                 </div>
 
@@ -458,8 +495,45 @@ export default function ZalivkaPage() {
                     <b className="text-primary">≈ {c.ml} ml</b>
                   </span>
                   <span>á {c.interval} {denWord(c.interval)}</span>
-                  <span>✓ {p.log ?? 0}× zalito</span>
+                  <button
+                    onClick={() => toggleHistory(p.id)}
+                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    aria-expanded={openHistory === p.id}
+                  >
+                    <History className="w-3 h-3" />
+                    {p.water_count}× zalito
+                  </button>
                 </div>
+
+                {openHistory === p.id && (
+                  <div className="rounded-lg border border-border bg-secondary/40 p-3">
+                    {!history[p.id] ? (
+                      <p className="text-xs text-muted-foreground">Načítám…</p>
+                    ) : history[p.id]!.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">Zatím žádná zálivka.</p>
+                    ) : (
+                      <ul className="space-y-1.5 max-h-52 overflow-y-auto">
+                        {history[p.id]!.map((ev) => (
+                          <li key={ev.id} className="flex items-center gap-2 text-xs">
+                            <Droplet className="w-3 h-3 text-primary shrink-0" />
+                            <span className="tabular-nums">{dayMonthTime.format(new Date(ev.ts))}</span>
+                            {ev.ml !== null && (
+                              <span className="text-muted-foreground tabular-nums">{ev.ml} ml</span>
+                            )}
+                            <button
+                              onClick={() => removeEvent(ev)}
+                              disabled={busy}
+                              className="ml-auto p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                              aria-label="Smazat zápis"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
 
                 <details className="text-[0.7rem] text-muted-foreground">
                   <summary className="cursor-pointer">výpočet</summary>
@@ -471,18 +545,22 @@ export default function ZalivkaPage() {
                 </details>
 
                 <div className="flex items-center justify-between gap-2 mt-auto">
-                  <span className="text-xs text-muted-foreground">naposledy {relDays(p.last)}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {p.last_ts ? `naposledy ${relDays(p.last_ts)}` : 'ještě nezalito'}
+                  </span>
                   <span className="flex items-center gap-1">
                     <button
-                      onClick={() => water(p.id)}
-                      className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs hover:bg-primary/20 inline-flex items-center gap-1"
+                      onClick={() => water(p, c)}
+                      disabled={busy}
+                      className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs hover:bg-primary/20 inline-flex items-center gap-1 disabled:opacity-50"
                       style={{ fontWeight: 600 }}
                     >
                       <Droplet className="w-3 h-3" /> Zalít
                     </button>
                     <button
-                      onClick={() => remove(p.id)}
-                      className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => removePlant(p.id)}
+                      disabled={busy}
+                      className="p-1.5 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-50"
                       aria-label={`Smazat ${p.name}`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -527,7 +605,8 @@ export default function ZalivkaPage() {
               <h3 className="text-xs uppercase tracking-wide text-foreground mb-1">Kolik vody</h3>
               <p>
                 Objem substrátu ≈ π·(Ø/2)²·výška (výška ≈ 0.8·Ø), z toho 10 % u sukulentů až 20 %
-                u kapradin a bylinek — tedy „zalít, dokud neodteče do misky".
+                u kapradin a bylinek — tedy „zalít, dokud neodteče do misky". Doporučení se ukládá
+                ke každé zálivce, takže historie nezlže, když později vyměníš květináč.
               </p>
             </div>
             <div>
