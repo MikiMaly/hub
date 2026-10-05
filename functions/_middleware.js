@@ -72,9 +72,19 @@ export async function onRequest(context) {
   }
 
   const deny = (toLogin) => {
-    if (isApi) return json({ error: 'Forbidden' }, 403);
+    // Neplatná session → smazat i UX cookies hub_ui / hub_admin_ui. Bez toho
+    // login stránka věřila hub_ui=1, poslala prohlížeč zpět na /private a ten
+    // sem — nekonečná smyčka přesměrování (typicky cookies z doby před účty).
+    const headers = new Headers();
+    if (toLogin) {
+      headers.append('Set-Cookie', 'hub_session=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax');
+      headers.append('Set-Cookie', 'hub_ui=; Path=/; Max-Age=0; Secure; SameSite=Lax');
+      headers.append('Set-Cookie', 'hub_admin_ui=; Path=/; Max-Age=0; Secure; SameSite=Lax');
+    }
+    if (isApi) return json({ error: 'Forbidden' }, 403, headers);
     const target = toLogin ? `/login?from=${encodeURIComponent(url.pathname)}` : '/private';
-    return Response.redirect(new URL(target, request.url), 302);
+    headers.set('Location', new URL(target, request.url).toString());
+    return new Response(null, { status: 302, headers });
   };
 
   if (!user) return deny(true);

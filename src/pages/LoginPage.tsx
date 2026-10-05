@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { motion } from 'motion/react'
 import { ArrowLeft, Check, Eye, EyeOff, Lock, Shield, UserPlus } from 'lucide-react'
-import { authError, isAuthed } from '../lib/auth'
+import { authError, fetchMe, isAuthed, logout } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { LogoMark, TopBar } from '../ui/brand'
 
@@ -21,12 +21,18 @@ export default function LoginPage() {
   const [registered, setRegistered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const from = searchParams.get('from') || '/private'
+  // Jen relativní cesta na tomhle webu, ať z /login nejde udělat přesměrovač jinam.
+  const fromParam = searchParams.get('from') || ''
+  const from = fromParam.startsWith('/') && !fromParam.startsWith('//') ? fromParam : '/private'
 
+  // Přesměrovat jen když session opravdu platí — cookie hub_ui je jen nápověda
+  // a stará (z doby před účty) by jinak roztočila smyčku login ↔ /private.
   useEffect(() => {
-    if (isAuthed()) {
-      window.location.replace(from)
-    }
+    if (!isAuthed()) return
+    fetchMe().then((me) => {
+      if (me) window.location.replace(from)
+      else logout()
+    })
   }, [from])
 
   const handleSubmit = async (e: FormEvent) => {
