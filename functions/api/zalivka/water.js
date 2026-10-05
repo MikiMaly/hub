@@ -4,9 +4,9 @@
  * POST   /api/zalivka/water            — zapíše zálivku {plant_id, ml?, note?, ts?}
  * DELETE /api/zalivka/water?id=N       — smaže zápis (překlik)
  *
- * Vyžaduje platnou session, stejně jako /api/zalivka.
+ * Přístup hlídá middleware (modul 'zalivka'). Všechny dotazy jdou přes
+ * plants.owner_id, takže cizí zálivky nejde číst, zapsat ani smazat.
  */
-import { getSession } from '../../_auth.js';
 
 const LIMIT = 500;
 
@@ -17,12 +17,13 @@ function json(data, status = 200) {
   });
 }
 
-async function authed(request, env) {
-  return (await getSession(request, env)) !== null;
+function owner(data) {
+  return data.user?.id ?? null;
 }
 
-export async function onRequestGet({ request, env }) {
-  if (!(await authed(request, env))) return json({ error: 'Forbidden' }, 403);
+export async function onRequestGet({ request, env, data }) {
+  const uid = owner(data);
+  if (uid === null) return json({ error: 'Forbidden' }, 403);
   if (!env.DB) return json({ error: 'D1 not bound' }, 500);
 
   const plantParam = new URL(request.url).searchParams.get('plant_id');
@@ -31,30 +32,34 @@ export async function onRequestGet({ request, env }) {
     const plantId = Number(plantParam);
     if (!Number.isInteger(plantId)) return json({ error: 'invalid_plant_id' }, 400);
     const { results } = await env.DB.prepare(
-      `SELECT id, plant_id, ts, ml, note
-       FROM watering_events
-       WHERE plant_id = ?
-       ORDER BY ts DESC, id DESC
+      `SELECT w.id, w.plant_id, w.ts, w.ml, w.note
+       FROM watering_events w
+       JOIN plants p ON p.id = w.plant_id
+       WHERE w.plant_id = ? AND p.owner_id = ?
+       ORDER BY w.ts DESC, w.id DESC
        LIMIT ?`
     )
-      .bind(plantId, LIMIT)
+      .bind(plantId, uid, LIMIT)
       .all();
     return json({ events: results });
   }
 
   const { results } = await env.DB.prepare(
-    `SELECT id, plant_id, ts, ml, note
-     FROM watering_events
-     ORDER BY ts DESC, id DESC
+    `SELECT w.id, w.plant_id, w.ts, w.ml, w.note
+     FROM watering_events w
+     JOIN plants p ON p.id = w.plant_id
+     WHERE p.owner_id = ?
+     ORDER BY w.ts DESC, w.id DESC
      LIMIT ?`
   )
-    .bind(LIMIT)
+    .bind(uid, LIMIT)
     .all();
   return json({ events: results });
 }
 
-export async function onRequestPost({ request, env }) {
-  if (!(await authed(request, env))) return json({ error: 'Forbidden' }, 403);
+export async function onRequestPost({ request, env, data }) {
+  const uid = owner(data);
+  if (uid === null) return json({ error: 'Forbidden' }, 403);
   if (!env.DB) return json({ error: 'D1 not bound' }, 500);
 
   let body;
@@ -65,8 +70,8 @@ export async function onRequestPost({ request, env }) {
 
   // Cizí klíč neověřuje D1 sám od sebe spolehlivě — radši se zeptám, ať
   // nevzniknou zálivky rostliny, která neexistuje.
-  const exists = await env.DB.prepare(`SELECT 1 AS x FROM plants WHERE id = ?`)
-    .bind(plantId)
+  const exists = await env.DB.prepare(`SELECT 1 AS x FROM plants WHERE id = ? AND owner_id = ?`)
+    .bind(plantId, uid)
     .first();
   if (!exists) return json({ error: 'unknown_plant' }, 404);
 
@@ -85,13 +90,19 @@ export async function onRequestPost({ request, env }) {
   return json({ event }, 201);
 }
 
-export async function onRequestDelete({ request, env }) {
-  if (!(await authed(request, env))) return json({ error: 'Forbidden' }, 403);
+export async function onRequestDelete({ request, env, data }) {
+  const uid = owner(data);
+  if (uid === null) return json({ error: 'Forbidden' }, 403);
   if (!env.DB) return json({ error: 'D1 not bound' }, 500);
 
   const id = Number(new URL(request.url).searchParams.get('id'));
   if (!Number.isInteger(id)) return json({ error: 'missing_id' }, 400);
 
-  const res = await env.DB.prepare(`DELETE FROM watering_events WHERE id = ?`).bind(id).run();
+  const res = await env.DB.prepare(
+    `DELETE FROM watering_events
+     WHERE id = ? AND plant_id IN (SELECT id FROM plants WHERE owner_id = ?)`
+  )
+    .bind(id, uid)
+    .run();
   return json({ deleted: res.meta.changes });
 }

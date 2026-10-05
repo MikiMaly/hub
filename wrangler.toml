@@ -6,14 +6,6 @@ pages_build_output_dir = "dist"
 # Non-secret variables here
 # HUB_PASSWORD is set as a Secret in Cloudflare Pages dashboard
 
-# KV namespace pro invite kódy
-# POZOR: ID musíš vyplnit po vytvoření KV namespace v Cloudflare dashboard
-# Dashboard → Workers & Pages → KV → Create namespace "HUB_INVITES"
-# Pak zkopíruj ID sem a nastav binding v Pages projektu jako "INVITES"
-[[kv_namespaces]]
-binding = "INVITES"
-id = "816e5069367440448a280e591a827046"
-
 # KV namespace pro Polymarket bot signály
 # POZOR: vytvoř namespace v Cloudflare dashboard → Workers & Pages → KV → "HUB_SIGNALS"
 # Pak zkopíruj ID sem a nastav binding v Pages projektu jako "SIGNALS"

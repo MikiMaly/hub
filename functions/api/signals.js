@@ -2,14 +2,14 @@
  * GET  /api/signals  — vrátí posledních 200 signálů (vyžaduje session)
  * POST /api/signals  — uloží nový signál (vyžaduje Authorization: Bearer <BOT_SECRET>)
  */
-import { getSession } from '../_auth.js';
+import { getUser } from '../_users.js';
 
 const SIGNALS_KEY = 'signals:list';
 const MAX_SIGNALS = 200;
 
 export async function onRequestGet({ request, env }) {
-  const session = await getSession(request, env);
-  if (!session) {
+  const user = await getUser(request, env);
+  if (!user || !user.modules.includes('polymarket')) {
     return new Response('Unauthorized', { status: 401 });
   }
 

@@ -2,7 +2,7 @@
  * GET /api/polymarket — vrátí aktuální btc-updown-5m a btc-updown-15m trhy z Polymarket
  * Veřejná data, ale vyžaduje přihlášení (session cookie).
  */
-import { getSession } from '../_auth.js';
+import { getUser } from '../_users.js';
 
 const GAMMA_API = 'https://gamma-api.polymarket.com';
 
@@ -52,8 +52,8 @@ async function trySlugs(slugs) {
 }
 
 export async function onRequestGet({ request, env }) {
-  const session = await getSession(request, env);
-  if (!session) {
+  const user = await getUser(request, env);
+  if (!user || !user.modules.includes('polymarket')) {
     return new Response('Unauthorized', { status: 401 });
   }
 

@@ -3,10 +3,9 @@
  * POST   /api/zalivka      — přidá rostlinu
  * DELETE /api/zalivka?id=N — smaže rostlinu i její historii zálivek
  *
- * Vyžaduje platnou session (admin i user). Middleware hlídá jen stránky
- * /private/*, API endpointy si ověření musí udělat samy.
+ * Přístup hlídá middleware (modul 'zalivka'), přihlášený uživatel je v
+ * data.user. Každý vidí a mění jen svoje rostliny (plants.owner_id).
  */
-import { getSession } from '../../_auth.js';
 
 const SPECIES = ['sukulent', 'kaktus', 'stredomorska', 'tropicka', 'orchidej', 'kapradina', 'bylinka'];
 const MATERIALS = ['terakota', 'plast', 'glazura'];
@@ -19,12 +18,15 @@ function json(data, status = 200) {
   });
 }
 
-async function authed(request, env) {
-  return (await getSession(request, env)) !== null;
+// Middleware pouští dál jen ověřeného uživatele; tohle je pojistka pro případ,
+// že by se cesta v middlewaru někdy rozjela s cestou tady.
+function owner(data) {
+  return data.user?.id ?? null;
 }
 
-export async function onRequestGet({ request, env }) {
-  if (!(await authed(request, env))) return json({ error: 'Forbidden' }, 403);
+export async function onRequestGet({ env, data }) {
+  const uid = owner(data);
+  if (uid === null) return json({ error: 'Forbidden' }, 403);
   if (!env.DB) return json({ error: 'D1 not bound' }, 500);
 
   // last_ts/water_count poddotazy místo GROUP BY — rostlina bez jediné zálivky
@@ -34,14 +36,18 @@ export async function onRequestGet({ request, env }) {
             (SELECT MAX(ts) FROM watering_events w WHERE w.plant_id = p.id) AS last_ts,
             (SELECT COUNT(*) FROM watering_events w WHERE w.plant_id = p.id) AS water_count
      FROM plants p
+     WHERE p.owner_id = ?
      ORDER BY p.id`
-  ).all();
+  )
+    .bind(uid)
+    .all();
 
   return json({ plants: results });
 }
 
-export async function onRequestPost({ request, env }) {
-  if (!(await authed(request, env))) return json({ error: 'Forbidden' }, 403);
+export async function onRequestPost({ request, env, data }) {
+  const uid = owner(data);
+  if (uid === null) return json({ error: 'Forbidden' }, 403);
   if (!env.DB) return json({ error: 'D1 not bound' }, 500);
 
   let body;
@@ -58,11 +64,11 @@ export async function onRequestPost({ request, env }) {
   if (!Number.isFinite(pot) || pot < 6 || pot > 60) return json({ error: 'invalid_pot_cm' }, 400);
 
   const plant = await env.DB.prepare(
-    `INSERT INTO plants (name, species, pot_cm, material, light)
-     VALUES (?, ?, ?, ?, ?)
+    `INSERT INTO plants (name, species, pot_cm, material, light, owner_id)
+     VALUES (?, ?, ?, ?, ?, ?)
      RETURNING id, name, species, pot_cm, material, light, created_at`
   )
-    .bind(name, body.species, Math.round(pot), body.material, body.light)
+    .bind(name, body.species, Math.round(pot), body.material, body.light, uid)
     .first();
 
   // Nová rostlina nemá žádnou zálivku — vědomě. Založení ≠ zalití, takže UI ji
@@ -70,8 +76,9 @@ export async function onRequestPost({ request, env }) {
   return json({ plant: { ...plant, last_ts: null, water_count: 0 } }, 201);
 }
 
-export async function onRequestDelete({ request, env }) {
-  if (!(await authed(request, env))) return json({ error: 'Forbidden' }, 403);
+export async function onRequestDelete({ request, env, data }) {
+  const uid = owner(data);
+  if (uid === null) return json({ error: 'Forbidden' }, 403);
   if (!env.DB) return json({ error: 'D1 not bound' }, 500);
 
   const id = Number(new URL(request.url).searchParams.get('id'));
@@ -79,9 +86,14 @@ export async function onRequestDelete({ request, env }) {
 
   // Historii mažu explicitně — na ON DELETE CASCADE se nespoléhám, schema ho
   // nedeklaruje a osiřelé řádky by se jinak hromadily.
+  const own = await env.DB.prepare(`SELECT 1 AS x FROM plants WHERE id = ? AND owner_id = ?`)
+    .bind(id, uid)
+    .first();
+  if (!own) return json({ error: 'unknown_plant' }, 404);
+
   const [, deleted] = await env.DB.batch([
     env.DB.prepare(`DELETE FROM watering_events WHERE plant_id = ?`).bind(id),
-    env.DB.prepare(`DELETE FROM plants WHERE id = ?`).bind(id),
+    env.DB.prepare(`DELETE FROM plants WHERE id = ? AND owner_id = ?`).bind(id, uid),
   ]);
 
   return json({ deleted: deleted.meta.changes });
