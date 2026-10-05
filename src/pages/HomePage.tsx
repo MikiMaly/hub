@@ -55,12 +55,20 @@ const projects: Project[] = [
   },
   {
     id: 2,
-    icon: '✨',
+    icon: '🪴',
     iconType: 'emoji',
-    title: 'Brzy',
-    description: 'Další open-source projekty a nástroje budou přibývat. Sleduj GitHub pro novinky.',
-    tags: ['coming soon'],
+    title: 'Zálivka',
+    description:
+      'Kdy a kolik zalévat pokojové rostliny: interval podle druhu, květináče, světla a ročního období, voda v ml a historie zálivek. Běží v prohlížeči, data zůstávají u tebe.',
+    tags: ['react', 'typescript', 'offline'],
+    downloads: [
+      {
+        label: 'Zdrojový kód (ZIP)',
+        url: 'https://github.com/MikiMaly/zalivka/archive/refs/heads/main.zip',
+      },
+    ],
     status: 'public',
+    href: 'https://github.com/MikiMaly/zalivka',
   },
 ]
 
@@ -281,7 +289,7 @@ export default function HomePage() {
               <div className="hub-eyebrow hub-eyebrow-raspberry mb-3">02 · Vyžaduje přihlášení</div>
               <h2 className="hub-title text-4xl sm:text-5xl mb-4">Privátní sekce</h2>
               <p className="text-muted-foreground max-w-md mb-8">
-                Interní nástroje a experimenty, ke kterým se dostaneš s heslem nebo pozvánkou.
+                Interní nástroje a experimenty. Přístup s vlastním účtem po schválení.
               </p>
               <Link to="/login" className="hub-btn hub-btn-primary hub-btn-lg group">
                 <Lock className="w-5 h-5" />
