@@ -1,7 +1,7 @@
 # mmaly.cz 2.0 — vizuální identita „Skleník"
 
-Stav: **návrh** na branchi `claude/hub-2-redesign-identity-sknjru` (hub i gekos).
-Po schválení se z tohohle souboru stane sekce v `CLAUDE.md` hubu a submodulů.
+Stav: **schváleno** 5. 10. 2026. Přesné hex kódy palety se ještě doladí.
+Závazná pravidla pro kód jsou shrnutá v `CLAUDE.md` hubu i gekos; tady je plný popis.
 Živý vzorník: **`/brand`** (hex kódy čte přímo z CSS, takže vždy sedí).
 
 ## Koncept
@@ -16,15 +16,14 @@ akcent. Žádné modré/fialové orby z verze 1, žádné náhodné Tailwind bar
   Profesionální vizitka: kdo jsem, co umím, veřejné projekty. Žádné osobní údaje
   ani lokalita (např. "Praha"), žádné soukromé věci z privátní sekce kromě
   zamčených názvů.
-- **Privátní sekce (`/private`)** je primárně pro mě (přihlášení heslem = admin).
+- **Privátní sekce (`/private`)** je primárně pro mě (admin).
   Tón může být osobní a neformální ("Ahoj. Co dnes?").
-- **Ostatní lidé** se do privátní sekce dostanou jen přes pozvánku, případně
-  později přes vlastní user účet. Vidí jen to, co jim role dovolí (admin věci
-  jako Platby a Pozvánky ne).
+- **Ostatní lidé** se do privátní sekce dostanou jen s vlastním účtem, který
+  schválím. Vidí jen moduly, které mají povolené, a jen svoje data.
 
 ## Paleta (jediný zdroj: `src/styles/theme.css`, blok „Paleta")
 
-| Token | Hex (návrh) | Role |
+| Token | Hex (k doladění) | Role |
 |---|---|---|
 | `--hub-green` | `#22c55e` | značka, primární akce, stav OK (zachováno z v1) |
 | `--hub-green-deep` | `#15803d` | stisk, tmavé plochy značky |
