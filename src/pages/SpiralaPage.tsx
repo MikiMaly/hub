@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
-import { ArrowLeft, Crosshair, Maximize2, Pencil, Plus, Trash2, X } from 'lucide-react'
+import { Crosshair, Maximize2, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { isAuthed } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { PageHeader, TopBar } from '../ui/brand'
 import { DAY, type Category, type Hit, type Period, type Shape, SpiralRenderer, isoOf, msOf, todayISO } from '../lib/spiral'
 
 // Modul Spirála: časová osa života jako kuželová spirála (engine v lib/spiral.ts).
@@ -11,11 +12,13 @@ import { DAY, type Category, type Hit, type Period, type Shape, SpiralRenderer, 
 
 const STORE = 'hub:spirala:v3'
 
+// Barvy pruhů z palety identity (theme.css). Canvas potřebuje hex, ne CSS
+// proměnnou, proto jsou tu opsané — při ladění palety upravit i tady.
 const CATEGORIES: Category[] = [
-  { id: 'bydleni', name: 'Bydlení', color: '#4f9dde' },
-  { id: 'vztahy', name: 'Vztahy', color: '#e0567a' },
-  { id: 'prace', name: 'Práce', color: '#e8a33b' },
-  { id: 'skola', name: 'Škola', color: '#5cc48a' },
+  { id: 'bydleni', name: 'Bydlení', color: '#3ee0c3' },  // akvamarín
+  { id: 'vztahy', name: 'Vztahy', color: '#e8336f' },    // malina
+  { id: 'prace', name: 'Práce', color: '#f5a65b' },      // meruňka
+  { id: 'skola', name: 'Škola', color: '#22c55e' },      // zelená
 ]
 
 type Saved = { birth: string; shape: Shape; periods: Period[] }
@@ -71,7 +74,7 @@ type Draft = { id: string | null; cat: string; title: string; start: string; end
 
 export default function SpiralaPage() {
   const navigate = useNavigate()
-  useDocumentTitle('Spirála · Hub')
+  useDocumentTitle('Spirála · mmaly.cz')
   useEffect(() => {
     if (!isAuthed()) navigate('/login?from=/private/spirala')
   }, [navigate])
@@ -296,25 +299,18 @@ export default function SpiralaPage() {
   }))
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 py-6">
-        <button
-          onClick={() => navigate('/private')}
-          className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground mb-5"
-        >
-          <ArrowLeft className="w-4 h-4" /> Zpět
-        </button>
-
-        <header className="flex items-end justify-between gap-4 flex-wrap mb-5">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-2xl shrink-0">🌀</div>
-            <div>
-              <h1 className="text-3xl" style={{ fontWeight: 600 }}>Spirála</h1>
-              <p className="text-sm text-muted-foreground">Časová osa života · jedna otočka = jeden rok</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            <label className="text-xs text-muted-foreground flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card">
+    <div className="hub-page">
+      <TopBar section="privátní" />
+      <div className="hub-container max-w-[1800px] pb-12">
+        <PageHeader
+          back="/private"
+          icon="🌀"
+          eyebrow="Prototyp"
+          title="Spirála"
+          subtitle="Časová osa života · jedna otočka = jeden rok"
+          aside={
+          <>
+            <label className="hub-chip px-3 py-1.5 gap-2">
               narození
               <input
                 type="date"
@@ -326,16 +322,13 @@ export default function SpiralaPage() {
             </label>
             <button
               onClick={() => setMark((m) => !m)}
-              className={
-                'inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border ' +
-                (mark ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-card hover:border-primary/50')
-              }
+              className={'hub-btn hub-btn-sm ' + (mark ? 'hub-btn-primary' : 'hub-btn-ghost')}
             >
               <Pencil className="w-3.5 h-3.5" /> {mark ? 'Zaznamenávám — táhni po pásu' : 'Zaznamenat'}
             </button>
             <button
               onClick={() => rRef.current && rRef.current.animateTo(rRef.current.fitCamera())}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:border-primary/50"
+              className="hub-btn hub-btn-sm hub-btn-ghost"
             >
               <Maximize2 className="w-3.5 h-3.5" /> Celý život
             </button>
@@ -344,15 +337,16 @@ export default function SpiralaPage() {
                 const r = rRef.current
                 if (r) r.animateTo(r.focusCamera(r.span.uEnd))
               }}
-              className="inline-flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-full border border-border bg-card hover:border-primary/50"
+              className="hub-btn hub-btn-sm hub-btn-ghost"
             >
               <Crosshair className="w-3.5 h-3.5" /> Dnes
             </button>
-          </div>
-        </header>
+          </>
+          }
+        />
 
         <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-          <div className="relative rounded-2xl border border-border bg-card overflow-hidden">
+          <div className="relative hub-card overflow-hidden">
             <div ref={wrapRef} className="h-[60vh] min-h-[420px]">
               <canvas
                 ref={canvasRef}
@@ -384,7 +378,7 @@ export default function SpiralaPage() {
 
             {hover && (
               <div className="absolute left-3 top-3 max-w-xs text-sm bg-background/85 backdrop-blur rounded-xl px-3 py-2.5 border border-border pointer-events-none">
-                <div style={{ fontWeight: 600 }}>{fmt(hover.ms)}</div>
+                <div className="font-semibold">{fmt(hover.ms)}</div>
                 <div className="text-xs text-muted-foreground mb-1">
                   {ageAt(hover.ms)} let · {seasonName(hover.ms)} · pruh {CATEGORIES[hover.lane]?.name}
                 </div>
@@ -403,28 +397,28 @@ export default function SpiralaPage() {
           </div>
 
           <aside className="flex flex-col gap-4">
-            <section className="rounded-2xl border border-border bg-card p-4">
-              <h2 className="text-sm mb-3" style={{ fontWeight: 600 }}>Tvar spirály</h2>
+            <section className="hub-card p-4">
+              <h2 className="hub-label text-mint mb-3">Tvar spirály</h2>
               <Slider label="Kužel (růst šířky s věkem)" value={data.shape.cone} min={0} max={0.4} step={0.005} onChange={(v) => setShape('cone', v)} />
               <Slider label="Rozteč závitů" value={data.shape.pitch} min={0.03} max={0.4} step={0.005} onChange={(v) => setShape('pitch', v)} />
               <Slider label="Výška pásu" value={data.shape.band} min={0.3} max={0.95} step={0.01} onChange={(v) => setShape('band', v)} />
             </section>
 
-            <section className="rounded-2xl border border-border bg-card p-4 flex-1 min-h-0">
+            <section className="hub-card p-4 flex-1 min-h-0">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-sm" style={{ fontWeight: 600 }}>Období</h2>
+                <h2 className="hub-label text-mint">Období</h2>
                 <div className="flex gap-1">
                   {data.periods.length === 0 && (
                     <button
                       onClick={() => setData((d) => ({ ...d, periods: demoPeriods(d.birth) }))}
-                      className="text-xs px-2 py-1 rounded-md border border-border hover:border-primary/50"
+                      className="hub-btn hub-btn-sm hub-btn-quiet"
                     >
                       ukázková data
                     </button>
                   )}
                   <button
                     onClick={() => setDraft({ id: null, cat: CATEGORIES[0].id, title: '', start: todayISO(), end: todayISO(), ongoing: true, note: '' })}
-                    className="text-xs px-2 py-1 rounded-md border border-border hover:border-primary/50 inline-flex items-center gap-1"
+                    className="hub-btn hub-btn-sm hub-btn-soft"
                   >
                     <Plus className="w-3 h-3" /> přidat
                   </button>
@@ -433,7 +427,7 @@ export default function SpiralaPage() {
               <div className="flex flex-col gap-3 max-h-[46vh] overflow-auto pr-1">
                 {grouped.map(({ c, items }) => (
                   <div key={c.id}>
-                    <div className="text-[0.7rem] uppercase tracking-wide text-muted-foreground mb-1 flex items-center gap-2">
+                    <div className="hub-label mb-1 flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-sm" style={{ background: c.color }} /> {c.name}
                     </div>
                     {items.length === 0 && <div className="text-xs text-muted-foreground/60 pl-4">—</div>}
@@ -442,7 +436,7 @@ export default function SpiralaPage() {
                         key={p.id}
                         onClick={() => focusPeriod(p)}
                         onDoubleClick={() => openEdit(p.id)}
-                        className="w-full text-left text-sm pl-4 py-1 rounded-md hover:bg-background/60 flex justify-between gap-2"
+                        className="w-full text-left text-sm pl-4 py-1 rounded-md hover:bg-muted flex justify-between gap-2"
                         title="klik = najet na spirále, dvojklik = upravit"
                       >
                         <span className="truncate">{p.title}</span>
@@ -460,11 +454,11 @@ export default function SpiralaPage() {
       </div>
 
       {draft && (
-        <div className="fixed inset-0 bg-black/50 grid place-items-center p-4 z-50" onClick={closeDraft}>
-          <div className="w-full max-w-md rounded-2xl border border-border bg-card p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm grid place-items-center p-4 z-50" onClick={closeDraft}>
+          <div className="w-full max-w-md hub-card p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg" style={{ fontWeight: 600 }}>{draft.id ? 'Upravit období' : 'Nové období'}</h3>
-              <button onClick={closeDraft} className="text-muted-foreground hover:text-foreground">
+              <h3 className="hub-title text-xl">{draft.id ? 'Upravit období' : 'Nové období'}</h3>
+              <button onClick={closeDraft} className="hub-btn hub-btn-quiet hub-btn-icon" aria-label="Zavřít">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -496,13 +490,13 @@ export default function SpiralaPage() {
             </div>
             <div className="flex justify-between mt-5">
               {draft.id ? (
-                <button onClick={() => deletePeriod(draft.id!)} className="inline-flex items-center gap-1 text-sm text-red-400 hover:text-red-300">
+                <button onClick={() => deletePeriod(draft.id!)} className="hub-btn hub-btn-sm hub-btn-danger">
                   <Trash2 className="w-4 h-4" /> Smazat
                 </button>
               ) : (
                 <span />
               )}
-              <button onClick={saveDraft} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm" style={{ fontWeight: 600 }}>
+              <button onClick={saveDraft} className="hub-btn hub-btn-primary">
                 Uložit
               </button>
             </div>
@@ -513,12 +507,12 @@ export default function SpiralaPage() {
   )
 }
 
-const inputCls = 'w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary/60'
+const inputCls = 'hub-input'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[0.7rem] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="hub-label">{label}</span>
       {children}
     </label>
   )

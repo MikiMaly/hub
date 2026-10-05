@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
-import { ArrowLeft, Droplet, History, Plus, Sprout, Trash2 } from 'lucide-react'
+import { Droplet, History, Plus, Sprout, Trash2 } from 'lucide-react'
 import { isAuthed } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { PageHeader, TopBar } from '../ui/brand'
 
 // Modul Zálivka. Výpočetní model pochází z prototypu (artefakt 28. 7. 2026)
 // a je zachovaný 1:1; data ale žijou v D1 (tabulky plants a watering_events,
@@ -162,21 +163,21 @@ function bigText(c: Computed): string {
 const STATUS_LABEL: Record<Status, string> = { over: 'Zalít teď', soon: 'Brzy', ok: 'OK' }
 
 const STATUS_PILL: Record<Status, string> = {
-  over: 'bg-destructive/15 text-destructive',
-  soon: 'bg-amber-500/15 text-amber-600 dark:text-amber-400',
-  ok:   'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400',
+  over: 'hub-pill-danger',
+  soon: 'hub-pill-warn',
+  ok:   'hub-pill-ok',
 }
 
-const STATUS_BORDER: Record<Status, string> = {
-  over: 'border-l-destructive',
-  soon: 'border-l-amber-500',
-  ok:   'border-l-emerald-500',
+const STATUS_EDGE: Record<Status, string> = {
+  over: 'hub-edge-danger',
+  soon: 'hub-edge-warn',
+  ok:   'hub-edge-ok',
 }
 
 const STATUS_BIG: Record<Status, string> = {
-  over: 'text-destructive',
-  soon: 'text-amber-600 dark:text-amber-400',
-  ok:   'text-emerald-600 dark:text-emerald-400',
+  over: 'text-danger',
+  soon: 'text-warning',
+  ok:   'text-success',
 }
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
@@ -192,7 +193,7 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export default function ZalivkaPage() {
-  useDocumentTitle('Zálivka — mmaly.cz')
+  useDocumentTitle('Zálivka · mmaly.cz')
   const navigate = useNavigate()
   const [ready, setReady] = useState(false)
   const [plants, setPlants] = useState<Plant[]>([])
@@ -317,32 +318,24 @@ export default function ZalivkaPage() {
   if (!ready) return null
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
-        <button
-          onClick={() => navigate('/private')}
-          className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground mb-6"
-        >
-          <ArrowLeft className="w-4 h-4" /> Zpět
-        </button>
-
-        <header className="flex items-end justify-between gap-4 flex-wrap mb-6">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 grid place-items-center text-2xl shrink-0">
-              🪴
-            </div>
-            <div>
-              <h1 className="text-3xl" style={{ fontWeight: 600 }}>Zálivka</h1>
-              <p className="text-sm text-muted-foreground">Kdy a kolik zalévat · trackování</p>
-            </div>
-          </div>
-          <span className="text-xs text-muted-foreground tabular-nums px-3 py-1.5 rounded-full border border-border bg-card">
-            období: <b className="text-primary">{season.key}</b> · násobič ×{season.f}
-          </span>
-        </header>
+    <div className="hub-page">
+      <TopBar section="privátní" />
+      <div className="hub-container pb-12">
+        <PageHeader
+          back="/private"
+          icon="🪴"
+          eyebrow="Rostliny"
+          title="Zálivka"
+          subtitle="Kdy a kolik zalévat · trackování"
+          aside={
+            <span className="hub-chip px-3 py-1.5 tabular-nums">
+              období <b className="text-mint font-semibold">{season.key}</b> · ×{season.f}
+            </span>
+          }
+        />
 
         {error && (
-          <p className="mb-5 px-4 py-3 rounded-xl bg-destructive/10 text-destructive text-sm">
+          <p className="mb-5 px-4 py-3 rounded-xl bg-raspberry/10 border border-raspberry/25 text-raspberry text-sm" role="alert">
             Chyba: {error}
           </p>
         )}
@@ -356,10 +349,10 @@ export default function ZalivkaPage() {
 
         {/* Formulář je pořád rozbalený — na šířku monitoru se vejde do jedné řady
             a klikat na rozbalení pokaždé, když přibude rostlina, nemá smysl. */}
-        <div className="rounded-2xl border border-border bg-card mb-6">
+        <div className="hub-card mb-8">
           <div className="flex items-center gap-2 px-5 pt-4">
             <Plus className="w-4 h-4 text-primary shrink-0" />
-            <span style={{ fontWeight: 600 }}>Přidat rostlinu</span>
+            <span className="font-semibold">Přidat rostlinu</span>
           </div>
 
             <div className="px-5 py-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 items-end">
@@ -369,14 +362,14 @@ export default function ZalivkaPage() {
                   onChange={(e) => setFName(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') add() }}
                   placeholder="např. Monstera u okna"
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm"
+                  className="hub-input"
                 />
               </Field>
               <Field label="Druh">
                 <select
                   value={fSpecies}
                   onChange={(e) => setFSpecies(e.target.value as SpeciesKey)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm"
+                  className="hub-input"
                 >
                   {(Object.keys(SPECIES) as SpeciesKey[]).map((k) => (
                     <option key={k} value={k}>{SPECIES[k].label}</option>
@@ -388,14 +381,14 @@ export default function ZalivkaPage() {
                   type="number" min={6} max={60}
                   value={fPot}
                   onChange={(e) => setFPot(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm tabular-nums"
+                  className="hub-input tabular-nums"
                 />
               </Field>
               <Field label="Materiál">
                 <select
                   value={fMaterial}
                   onChange={(e) => setFMaterial(e.target.value as MaterialKey)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm"
+                  className="hub-input"
                 >
                   {(Object.keys(MATERIALS) as MaterialKey[]).map((k) => (
                     <option key={k} value={k}>{MATERIALS[k].label}</option>
@@ -406,7 +399,7 @@ export default function ZalivkaPage() {
                 <select
                   value={fLight}
                   onChange={(e) => setFLight(e.target.value as LightKey)}
-                  className="w-full px-3 py-2 rounded-lg border border-border bg-input-background text-sm"
+                  className="hub-input"
                 >
                   {(Object.keys(LIGHT) as LightKey[]).map((k) => (
                     <option key={k} value={k}>{LIGHT[k].label}</option>
@@ -414,12 +407,7 @@ export default function ZalivkaPage() {
                 </select>
               </Field>
               <div className="flex items-end">
-                <button
-                  onClick={add}
-                  disabled={busy}
-                  className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm disabled:opacity-50"
-                  style={{ fontWeight: 600 }}
-                >
+                <button onClick={add} disabled={busy} className="hub-btn hub-btn-primary w-full">
                   Přidat rostlinu
                 </button>
               </div>
@@ -427,14 +415,14 @@ export default function ZalivkaPage() {
         </div>
 
         <div className="flex items-baseline gap-2 mb-4">
-          <h2 className="text-base" style={{ fontWeight: 600 }}>Moje rostliny</h2>
+          <h2 className="hub-title text-xl">Moje rostliny</h2>
           <span className="text-sm text-muted-foreground tabular-nums">
             {plants.length} {plantWord(plants.length)}
           </span>
         </div>
 
         {rows.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-8 text-center">
+          <div className="hub-card p-8 text-center">
             <Sprout className="w-8 h-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-muted-foreground text-sm">
               Zatím žádné rostliny — přidej si první nahoře.
@@ -448,20 +436,11 @@ export default function ZalivkaPage() {
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: Math.min(i * 0.04, 0.3) }}
-                className={
-                  'rounded-2xl bg-card border border-border border-l-4 p-5 flex flex-col gap-3 ' +
-                  STATUS_BORDER[c.status]
-                }
+                className={'hub-card p-5 flex flex-col gap-3 ' + STATUS_EDGE[c.status]}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <span className="truncate" style={{ fontWeight: 600 }} title={p.name}>{p.name}</span>
-                  <span
-                    className={
-                      'text-[0.68rem] uppercase tracking-wide px-2 py-1 rounded-full shrink-0 ' +
-                      STATUS_PILL[c.status]
-                    }
-                    style={{ fontWeight: 600 }}
-                  >
+                  <span className="truncate font-semibold" title={p.name}>{p.name}</span>
+                  <span className={'hub-pill font-mono uppercase tracking-[0.1em] shrink-0 ' + STATUS_PILL[c.status]}>
                     {STATUS_LABEL[c.status]}
                   </span>
                 </div>
@@ -474,7 +453,7 @@ export default function ZalivkaPage() {
                 </div>
 
                 <div className="flex items-baseline gap-2">
-                  <span className={'text-2xl tabular-nums ' + STATUS_BIG[c.status]} style={{ fontWeight: 600 }}>
+                  <span className={'hub-num text-3xl font-semibold ' + STATUS_BIG[c.status]}>
                     {bigText(c)}
                   </span>
                   <span className="text-xs text-muted-foreground">
@@ -482,15 +461,15 @@ export default function ZalivkaPage() {
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground border-t border-dashed border-border pt-2.5 tabular-nums">
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground hub-divider pt-2.5 tabular-nums">
                   <span className="inline-flex items-center gap-1">
-                    <Droplet className="w-3 h-3" />
-                    <b className="text-primary">≈ {c.ml} ml</b>
+                    <Droplet className="w-3 h-3 text-aqua" />
+                    <b className="text-aqua">≈ {c.ml} ml</b>
                   </span>
                   <span>á {c.interval} {denWord(c.interval)}</span>
                   <button
                     onClick={() => toggleHistory(p.id)}
-                    className="inline-flex items-center gap-1 hover:text-foreground"
+                    className="inline-flex items-center gap-1 hover:text-mint"
                     aria-expanded={openHistory === p.id}
                   >
                     <History className="w-3 h-3" />
@@ -499,7 +478,7 @@ export default function ZalivkaPage() {
                 </div>
 
                 {openHistory === p.id && (
-                  <div className="rounded-lg border border-border bg-secondary/40 p-3">
+                  <div className="rounded-xl border border-border bg-secondary/60 p-3">
                     {!history[p.id] ? (
                       <p className="text-xs text-muted-foreground">Načítám…</p>
                     ) : history[p.id]!.length === 0 ? (
@@ -508,7 +487,7 @@ export default function ZalivkaPage() {
                       <ul className="space-y-1.5 max-h-52 overflow-y-auto">
                         {history[p.id]!.map((ev) => (
                           <li key={ev.id} className="flex items-center gap-2 text-xs">
-                            <Droplet className="w-3 h-3 text-primary shrink-0" />
+                            <Droplet className="w-3 h-3 text-aqua shrink-0" />
                             <span className="tabular-nums">{dayMonthTime.format(new Date(ev.ts))}</span>
                             {ev.ml !== null && (
                               <span className="text-muted-foreground tabular-nums">{ev.ml} ml</span>
@@ -542,12 +521,7 @@ export default function ZalivkaPage() {
                     {p.last_ts ? `naposledy ${relDays(p.last_ts)}` : 'ještě nezalito'}
                   </span>
                   <span className="flex items-center gap-1">
-                    <button
-                      onClick={() => water(p, c)}
-                      disabled={busy}
-                      className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs hover:bg-primary/20 inline-flex items-center gap-1 disabled:opacity-50"
-                      style={{ fontWeight: 600 }}
-                    >
+                    <button onClick={() => water(p, c)} disabled={busy} className="hub-btn hub-btn-sm hub-btn-aqua">
                       <Droplet className="w-3 h-3" /> Zalít
                     </button>
                     <button
@@ -565,8 +539,8 @@ export default function ZalivkaPage() {
           </section>
         )}
 
-        <details className="mt-8 rounded-2xl border border-border bg-secondary/40 px-5">
-          <summary className="cursor-pointer py-4 text-sm" style={{ fontWeight: 600 }}>
+        <details className="mt-10 hub-card px-5">
+          <summary className="cursor-pointer py-4 text-sm font-semibold hover:text-mint">
             Jak modul počítá zálivku
           </summary>
           <div className="pb-5 text-sm text-muted-foreground leading-relaxed space-y-3">
@@ -578,7 +552,7 @@ export default function ZalivkaPage() {
               interval = základ × Ø-květináč × materiál × světlo × období
             </p>
             <div>
-              <h3 className="text-xs uppercase tracking-wide text-foreground mb-1">Základ (vegetační sezóna, dny)</h3>
+              <h3 className="hub-label text-mint mb-1">Základ (vegetační sezóna, dny)</h3>
               <ul className="list-disc pl-5 space-y-0.5">
                 <li>Sukulent 14 · Kaktus 16 · Středomořská 9</li>
                 <li>Tropická pokojovka 6 · Orchidej 8</li>
@@ -586,7 +560,7 @@ export default function ZalivkaPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-xs uppercase tracking-wide text-foreground mb-1">Korekce</h3>
+              <h3 className="hub-label text-mint mb-1">Korekce</h3>
               <ul className="list-disc pl-5 space-y-0.5">
                 <li><b>Ø květináče:</b> &lt;13 cm ×0.8 · 13–20 ×1.0 · 20–28 ×1.2 · &gt;28 ×1.4 — větší = víc zásoby vody</li>
                 <li><b>Materiál:</b> terakota ×0.85 (dýchá, schne rychleji) · plast ×1.0 · glazura ×1.1</li>
@@ -595,7 +569,7 @@ export default function ZalivkaPage() {
               </ul>
             </div>
             <div>
-              <h3 className="text-xs uppercase tracking-wide text-foreground mb-1">Kolik vody</h3>
+              <h3 className="hub-label text-mint mb-1">Kolik vody</h3>
               <p>
                 Objem substrátu ≈ π·(Ø/2)²·výška (výška ≈ 0.8·Ø), z toho 10 % u sukulentů až 20 %
                 u kapradin a bylinek — tedy „zalít, dokud neodteče do misky". Doporučení se ukládá
@@ -603,7 +577,7 @@ export default function ZalivkaPage() {
               </p>
             </div>
             <div>
-              <h3 className="text-xs uppercase tracking-wide text-foreground mb-1">Co dál</h3>
+              <h3 className="hub-label text-mint mb-1">Co dál</h3>
               <p>
                 Až bude čidlo vlhkosti půdy (kapacitní senzor přes ESPHome/MQTT), plán se přepne
                 z „podle kalendáře" na „podle reality": zaleje se, až vlhkost klesne pod práh,
@@ -619,20 +593,19 @@ export default function ZalivkaPage() {
 
 function Tile({ n, k, tone }: { n: number; k: string; tone: Status | 'all' }) {
   const color =
-    tone === 'over' ? 'text-destructive'
-    : tone === 'soon' ? 'text-amber-600 dark:text-amber-400'
-    : tone === 'ok' ? 'text-emerald-600 dark:text-emerald-400'
-    : 'text-primary'
-  const bar =
-    tone === 'over' ? 'bg-destructive'
-    : tone === 'soon' ? 'bg-amber-500'
-    : tone === 'ok' ? 'bg-emerald-500'
-    : 'bg-primary'
+    tone === 'over' ? 'text-danger'
+    : tone === 'soon' ? 'text-warning'
+    : tone === 'ok' ? 'text-success'
+    : 'text-mint'
+  const edge =
+    tone === 'over' ? 'hub-edge-danger'
+    : tone === 'soon' ? 'hub-edge-warn'
+    : tone === 'ok' ? 'hub-edge-ok'
+    : 'hub-edge-info'
   return (
-    <div className="relative rounded-2xl border border-border bg-card px-4 py-3.5 overflow-hidden">
-      <span className={'absolute left-0 top-0 bottom-0 w-1 ' + bar} aria-hidden />
-      <div className={'text-3xl tabular-nums leading-none ' + color} style={{ fontWeight: 600 }}>{n}</div>
-      <div className="text-[0.7rem] uppercase tracking-wide text-muted-foreground mt-2">{k}</div>
+    <div className={'hub-card px-4 py-4 ' + edge}>
+      <div className={'hub-num text-4xl font-semibold leading-none ' + color}>{n}</div>
+      <div className="hub-label mt-2.5">{k}</div>
     </div>
   )
 }
@@ -640,7 +613,7 @@ function Tile({ n, k, tone }: { n: number; k: string; tone: Status | 'all' }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[0.7rem] uppercase tracking-wide text-muted-foreground">{label}</span>
+      <span className="hub-label">{label}</span>
       {children}
     </label>
   )

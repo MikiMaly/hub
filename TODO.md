@@ -13,6 +13,17 @@
 - [ ] Napojit `uwd.mmaly.cz` — webapp pro online stahování videí (RPi4 + Cloudflare Tunnel)
 - [ ] Server mód webappu (v7.2) — stahování na server + HTTP download pro uživatele
 
+## Uživatelské účty a vlastní data (budoucnost)
+Dnes session nese jen roli (`admin` / `user`), ne identitu člověka, a data jsou společná
+(zatím nevadí, data jsou jen moje).
+- [ ] Registrace uživatelů se **schválením adminem** — nový účet je "čeká na schválení", dokud ho nepovolím
+- [ ] Session s identitou uživatele (`user_id` v payloadu)
+- [ ] Karta "Pozvánky" v privátní sekci → předělat na **správu uživatelů / schvalování registrací**
+- [ ] Až budou účty funkční, invite kódy zrušit (login tab "Pozvánka", `/api/invite`, KV `INVITES`)
+- [ ] Zálivka per uživatel — sloupec `owner_id` v `plants` (+ filtr ve všech `/api/zalivka` dotazech)
+- [ ] Spirála per uživatel — přesun z localStorage do D1 s `owner_id` (dnes jen v jednom prohlížeči)
+- [ ] Rozhodnout u gekonů: zůstanou jen moje (skrýt pro user účty), nebo i read-only / sdílené
+
 ## Vylepšení (rozhodnuto pozdějc)
 
 ### Bezpečnost
@@ -41,7 +52,7 @@
 - [ ] Aktualizovat `public/sitemap.xml` `lastmod` při větších změnách (manuálně nebo přes build skript)
 
 ## Nápady / budoucnost
-- [ ] Invite kódy — single-use varianta (kód se po použití invaliduje)
+- [ ] ~~Invite kódy — single-use varianta~~ (odpadá, nahradí je účty se schválením)
 - [ ] Zobrazit datum posledního použití kódu
 - [ ] Více privátních appek v sekci
 - [ ] Stats / activity feed na PrivatePage napojený na reálná data (Polymarket signals)

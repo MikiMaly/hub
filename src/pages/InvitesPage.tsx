@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import {
-  ArrowLeft,
   Check,
   Copy,
   Key,
@@ -12,6 +11,7 @@ import {
 } from 'lucide-react'
 import { isAdmin, isAuthed, logout } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { PageHeader, SiteFooter, TopBar } from '../ui/brand'
 
 type InviteCode = {
   code: string
@@ -20,7 +20,7 @@ type InviteCode = {
 }
 
 export default function InvitesPage() {
-  useDocumentTitle('Pozvánky — mmaly.cz')
+  useDocumentTitle('Pozvánky · mmaly.cz')
   const navigate = useNavigate()
   const [ready, setReady] = useState(false)
   const [codes, setCodes] = useState<InviteCode[]>([])
@@ -129,235 +129,169 @@ export default function InvitesPage() {
   if (!ready) return null
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border"
-      >
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/private')}
-              className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Zpět</span>
-            </button>
-            <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm flex items-center gap-1">
-              <Key className="w-3 h-3" />
-              Admin
-            </span>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-          >
+    <div className="hub-page">
+      <TopBar
+        section="admin"
+        sectionTone="raspberry"
+        actions={
+          <button onClick={handleLogout} className="hub-btn hub-btn-danger">
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Odhlásit</span>
           </button>
-        </div>
-      </motion.nav>
+        }
+      />
 
-      <section className="pt-32 pb-12 px-6 relative overflow-hidden">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-32 right-1/4 w-96 h-96 rounded-full bg-primary/10 blur-[120px] pointer-events-none"
+      <main className="hub-container max-w-5xl">
+        <PageHeader
+          back="/private"
+          icon={<Key className="w-6 h-6" />}
+          iconTone="raspberry"
+          eyebrow="Admin"
+          title="Správa pozvánek"
+          subtitle="Vytvářej a spravuj invite kódy pro přístup k privátní sekci."
         />
-        <div className="max-w-4xl mx-auto relative z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-3 mb-4">
-              <Key className="w-8 h-8 text-primary" />
-              <h1 style={{ fontSize: '2.5rem', fontWeight: 600 }}>Správa pozvánek</h1>
-            </div>
-            <p className="text-lg text-muted-foreground">
-              Vytvárej a spravuj invite kódy pro přístup k privátní sekci.
-            </p>
-          </motion.div>
-        </div>
-      </section>
 
-      <section className="px-6 pb-12">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="relative p-6 rounded-2xl bg-card border border-border overflow-hidden mb-8"
-          >
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")`,
-                mixBlendMode: 'overlay',
-              }}
-            />
-            <form onSubmit={handleCreate} className="relative z-10 flex flex-col sm:flex-row gap-3">
-              <div className="flex-1">
-                <label htmlFor="label" className="block mb-2 text-sm text-muted-foreground">
-                  Jméno / popis
-                </label>
-                <input
-                  id="label"
-                  type="text"
-                  value={label}
-                  onChange={(e) => setLabel(e.target.value)}
-                  placeholder="např. Kamarád Petr"
-                  className="w-full px-4 py-3 rounded-lg bg-input-background border border-border focus:border-primary focus:outline-none transition-colors"
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="hub-card p-5 sm:p-6 mb-6"
+        >
+          <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-3 sm:items-end">
+            <label className="flex-1">
+              <span className="hub-label block mb-2">Jméno / popis</span>
+              <input
+                id="label"
+                type="text"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="např. Kamarád Petr"
+                className="hub-input hub-input-lg"
+              />
+            </label>
+            <button
+              type="submit"
+              disabled={creating || !label.trim()}
+              className="hub-btn hub-btn-primary hub-btn-lg"
+            >
+              {creating ? (
+                <motion.span
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
                 />
-              </div>
-              <motion.button
-                type="submit"
-                disabled={creating || !label.trim()}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="sm:self-end flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {creating ? (
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
-                  />
-                ) : (
-                  <Plus className="w-5 h-5" />
-                )}
-                <span>Vytvořit kód</span>
-              </motion.button>
-            </form>
-
-            <AnimatePresence>
-              {justCreated && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
-                  exit={{ opacity: 0, height: 0, marginTop: 0 }}
-                  className="relative z-10 overflow-hidden"
-                >
-                  <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/10 border border-primary/20">
-                    <Check className="w-5 h-5 text-primary shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-muted-foreground mb-1">Nový kód vytvořen</div>
-                      <code className="font-mono text-primary text-lg tracking-widest">
-                        {justCreated}
-                      </code>
-                    </div>
-                    <button
-                      onClick={() => handleCopy(justCreated)}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary text-sm transition-colors"
-                    >
-                      {copied === justCreated ? (
-                        <>
-                          <Check className="w-4 h-4" />
-                          Zkopírováno
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" />
-                          Zkopírovat
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </motion.div>
+              ) : (
+                <Plus className="w-5 h-5" />
               )}
-            </AnimatePresence>
+              Vytvořit kód
+            </button>
+          </form>
 
-            {error && (
+          <AnimatePresence>
+            {justCreated && (
               <motion.div
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative z-10 mt-4 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm"
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                className="overflow-hidden"
               >
-                {error}
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-primary/10 border border-primary/25">
+                  <Check className="w-5 h-5 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="hub-label mb-1">Nový kód vytvořen</div>
+                    <code className="font-mono text-mint text-lg tracking-[0.25em]">{justCreated}</code>
+                  </div>
+                  <button onClick={() => handleCopy(justCreated)} className="hub-btn hub-btn-sm hub-btn-soft">
+                    {copied === justCreated ? (
+                      <>
+                        <Check className="w-4 h-4" />
+                        Zkopírováno
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" />
+                        Zkopírovat
+                      </>
+                    )}
+                  </button>
+                </div>
               </motion.div>
             )}
-          </motion.div>
+          </AnimatePresence>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="relative rounded-2xl bg-card border border-border overflow-hidden"
-          >
-            <div
-              className="absolute inset-0 opacity-20 pointer-events-none"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")`,
-                mixBlendMode: 'overlay',
-              }}
-            />
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4 px-3 py-2.5 rounded-xl bg-raspberry/10 border border-raspberry/25 text-raspberry text-sm"
+              role="alert"
+            >
+              {error}
+            </motion.div>
+          )}
+        </motion.div>
 
-            <div className="relative z-10">
-              {loading ? (
-                <div className="p-12 text-center text-muted-foreground">Načítám…</div>
-              ) : codes.length === 0 ? (
-                <div className="p-12 text-center text-muted-foreground">
-                  Zatím žádné pozvánky.
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                          Kód
-                        </th>
-                        <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                          Jméno
-                        </th>
-                        <th className="text-left px-6 py-4 text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                          Vytvořeno
-                        </th>
-                        <th className="px-6 py-4" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {codes.map((c) => (
-                        <tr
-                          key={c.code}
-                          className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors"
-                        >
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-2">
-                              <code className="font-mono text-primary tracking-widest">
-                                {c.code}
-                              </code>
-                              <button
-                                onClick={() => handleCopy(c.code)}
-                                className="p-1 rounded text-muted-foreground hover:text-foreground transition-colors"
-                                aria-label="Zkopírovat kód"
-                              >
-                                {copied === c.code ? (
-                                  <Check className="w-4 h-4 text-primary" />
-                                ) : (
-                                  <Copy className="w-4 h-4" />
-                                )}
-                              </button>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-foreground">{c.label}</td>
-                          <td className="px-6 py-4 text-muted-foreground text-sm">{c.created}</td>
-                          <td className="px-6 py-4 text-right">
-                            <button
-                              onClick={() => handleDelete(c.code)}
-                              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors text-sm"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Smazat
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="hub-card overflow-hidden"
+        >
+          {loading ? (
+            <div className="p-12 text-center text-muted-foreground">Načítám…</div>
+          ) : codes.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground">Zatím žádné pozvánky.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-border">
+                    <th className="text-left px-5 py-3.5 hub-label font-medium">Kód</th>
+                    <th className="text-left px-5 py-3.5 hub-label font-medium">Jméno</th>
+                    <th className="text-left px-5 py-3.5 hub-label font-medium">Vytvořeno</th>
+                    <th className="px-5 py-3.5" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {codes.map((c) => (
+                    <tr
+                      key={c.code}
+                      className="border-b border-border last:border-0 hover:bg-secondary/50 transition-colors"
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-2">
+                          <code className="font-mono text-mint tracking-[0.2em]">{c.code}</code>
+                          <button
+                            onClick={() => handleCopy(c.code)}
+                            className="hub-btn hub-btn-quiet hub-btn-icon !min-h-8 !w-8"
+                            aria-label="Zkopírovat kód"
+                          >
+                            {copied === c.code ? (
+                              <Check className="w-4 h-4 text-primary" />
+                            ) : (
+                              <Copy className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5">{c.label}</td>
+                      <td className="px-5 py-3.5 text-muted-foreground text-sm tabular-nums">{c.created}</td>
+                      <td className="px-5 py-3.5 text-right">
+                        <button onClick={() => handleDelete(c.code)} className="hub-btn hub-btn-sm hub-btn-danger">
+                          <Trash2 className="w-4 h-4" />
+                          Smazat
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </motion.div>
-        </div>
-      </section>
+          )}
+        </motion.div>
+      </main>
+
+      <SiteFooter note="admin" />
     </div>
   )
 }

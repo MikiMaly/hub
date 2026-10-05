@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
-import { ArrowRight, ExternalLink, Github, Key, Lock, LogOut } from 'lucide-react'
+import { ArrowRight, ExternalLink, Github, Key, LogOut } from 'lucide-react'
 import { isAdmin, isAuthed, logout } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
+import { PageHeader, SiteFooter, TopBar } from '../ui/brand'
 
 type ProjectCard = {
   id: string
@@ -20,7 +21,7 @@ type ProjectCard = {
 }
 
 export default function PrivatePage() {
-  useDocumentTitle('Privátní — mmaly.cz')
+  useDocumentTitle('Privátní · mmaly.cz')
   const navigate = useNavigate()
   const [ready, setReady] = useState(false)
   const [admin, setAdmin] = useState(false)
@@ -104,177 +105,118 @@ export default function PrivatePage() {
     else navigate(card.href)
   }
 
+  const main = cards.filter((c) => !c.small)
+  const tools = cards.filter((c) => c.small)
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <motion.nav
-        initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border"
-      >
-        <div className="mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div
-              className="flex items-center gap-2 cursor-pointer"
-              onClick={() => navigate('/')}
-            >
-              <span className="text-xl text-foreground">mmaly</span>
-              <span className="text-xl text-primary">.cz</span>
-            </div>
-            <span className="px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              Privátní sekce
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
+    <div className="hub-page">
+      <TopBar
+        section="privátní"
+        actions={
+          <>
             <a
               href="https://github.com/MikiMaly"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary hover:bg-muted transition-colors"
+              className="hub-btn hub-btn-ghost"
             >
               <Github className="w-4 h-4" />
               <span className="hidden sm:inline">GitHub</span>
             </a>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-            >
+            <button onClick={handleLogout} className="hub-btn hub-btn-danger">
               <LogOut className="w-4 h-4" />
               <span className="hidden sm:inline">Odhlásit</span>
             </button>
-          </div>
-        </div>
-      </motion.nav>
+          </>
+        }
+      />
 
-      {/* Hlavička držená nízko, ať je mřížka vidět hned po načtení i na notebooku. */}
-      <section className="pt-28 pb-6 px-6 lg:px-10 relative overflow-hidden">
-        <motion.div
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-32 right-1/4 w-96 h-96 rounded-full bg-primary/10 blur-[120px] pointer-events-none"
+      <main className="hub-container">
+        {/* Hlavička držená nízko, ať je mřížka vidět hned po načtení i na notebooku. */}
+        <PageHeader
+          eyebrow={admin ? 'Privátní sekce · admin' : 'Privátní sekce'}
+          title={
+            <>
+              Ahoj<span className="text-raspberry">.</span> Co dnes?
+            </>
+          }
+          subtitle="Interní nástroje dostupné jen přihlášeným."
         />
-        <div className="mx-auto px-0 relative z-10">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-baseline gap-3 flex-wrap">
-              <div className="flex items-center gap-3">
-                <Lock className="w-7 h-7 text-primary" />
-                <h1 style={{ fontSize: '2.25rem', fontWeight: 600 }}>Privátní projekty</h1>
-              </div>
-              <p className="text-muted-foreground">
-                Interní nástroje dostupné jen přihlášeným.
-              </p>
-            </div>
-          </motion.div>
-        </div>
-      </section>
 
-      <section className="pb-12 px-6 lg:px-10">
         {/* Mřížka místo seznamu pod sebou — na šířku monitoru se tak vejde všechno
             najednou a nemusím kvůli pěti položkám scrollovat celou stránku. */}
-        <div className="mx-auto grid gap-6 sm:grid-cols-2 xl:grid-cols-3 items-start">
-          {cards.map((card, index) => (
-            <motion.div
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          {main.map((card, index) => (
+            <motion.button
               key={card.id}
-              initial={{ opacity: 0, y: 20 }}
+              onClick={() => open(card)}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: Math.min(index * 0.06, 0.3) }}
-              whileHover={{ y: -3 }}
-              className="group relative h-full"
+              className="hub-card hub-card-hover group text-left p-6 sm:p-7 flex flex-col min-h-[12rem]"
             >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-              <button
-                onClick={() => open(card)}
-                className={
-                  'relative w-full h-full text-left rounded-2xl bg-card border border-border ' +
-                  'group-hover:border-primary/50 transition-all overflow-hidden ' +
-                  (card.small ? 'p-5' : 'p-7 min-h-[11rem]')
-                }
-              >
-                <div
-                  className="absolute inset-0 opacity-20 pointer-events-none"
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='3' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E")`,
-                    mixBlendMode: 'overlay',
-                  }}
-                />
-
-                <div className="relative z-10 flex items-start gap-4">
-                  <div
-                    className={
-                      'rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 ' +
-                      'flex items-center justify-center shrink-0 ' +
-                      (card.small ? 'w-11 h-11 text-xl' : 'w-16 h-16 text-3xl')
-                    }
-                  >
-                    {card.id === 'invites' ? (
-                      <Key className={card.small ? 'w-4 h-4 text-primary' : 'w-6 h-6 text-primary'} />
-                    ) : (
-                      <span>{card.icon}</span>
-                    )}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h3
-                        className={
-                          'text-primary inline-flex items-center gap-1.5 ' +
-                          (card.small ? 'text-lg' : 'text-2xl')
-                        }
-                        style={{ fontWeight: 600 }}
-                      >
-                        {card.title}
-                        {card.external ? (
-                          <ExternalLink className="w-3.5 h-3.5 opacity-60" />
-                        ) : (
-                          <ArrowRight className="w-4 h-4 opacity-60 group-hover:translate-x-1 transition-transform" />
-                        )}
-                      </h3>
-                      {card.badge && (
-                        <span className="px-2 py-0.5 rounded text-xs bg-primary/10 text-primary border border-primary/20">
-                          {card.badge}
-                        </span>
-                      )}
-                    </div>
-
-                    <p
-                      className={
-                        'text-muted-foreground leading-relaxed ' +
-                        (card.small ? 'text-sm' : 'text-base mb-4')
-                      }
-                    >
-                      {card.description}
-                    </p>
-
-                    {card.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {card.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className="px-2.5 py-0.5 text-xs rounded-full bg-secondary text-foreground border border-border font-medium"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+              <div className="flex items-start justify-between gap-3 mb-5">
+                <div className={'hub-icon-tile w-14 h-14 text-3xl ' + (card.badge ? 'hub-icon-tile-raspberry' : '')}>
+                  {card.icon}
                 </div>
-              </button>
-            </motion.div>
+                {card.external ? (
+                  <ExternalLink className="w-5 h-5 text-muted-foreground group-hover:text-aqua transition-colors" />
+                ) : (
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-aqua group-hover:translate-x-1 transition-all" />
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <h2 className="hub-title text-2xl group-hover:text-mint transition-colors">{card.title}</h2>
+                {card.badge && (
+                  <span className="hub-pill hub-pill-danger font-mono uppercase tracking-[0.12em]">
+                    {card.badge}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-muted-foreground leading-relaxed mb-5">{card.description}</p>
+
+              {card.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-auto">
+                  {card.tags.map((tag) => (
+                    <span key={tag} className="hub-chip">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </motion.button>
           ))}
         </div>
-      </section>
 
-      <footer className="py-8 px-6 lg:px-10 border-t border-border">
-        <div className="mx-auto text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-xl text-foreground">mmaly</span>
-            <span className="text-xl text-primary">.cz</span>
+        {/* Drobné nástroje (pozvánky) zvlášť jako řádek dlaždic pod mřížkou. */}
+        {tools.length > 0 && (
+          <div className="mt-10">
+            <div className="hub-eyebrow hub-eyebrow-raspberry mb-4">Správa</div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {tools.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => open(card)}
+                  className="hub-card hub-card-hover group text-left p-4 flex items-center gap-3"
+                >
+                  <div className="hub-icon-tile hub-icon-tile-raspberry w-10 h-10">
+                    <Key className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-semibold group-hover:text-mint transition-colors">{card.title}</div>
+                    <div className="text-sm text-muted-foreground truncate">{card.description}</div>
+                  </div>
+                  <ArrowRight className="w-4 h-4 ml-auto text-muted-foreground group-hover:text-aqua shrink-0" />
+                </button>
+              ))}
+            </div>
           </div>
-          <p className="text-muted-foreground text-sm">© 2026 Mikoláš Malý — Private</p>
-        </div>
-      </footer>
+        )}
+      </main>
+
+      <SiteFooter note="privátní" />
     </div>
   )
 }
