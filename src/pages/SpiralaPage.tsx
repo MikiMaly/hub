@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Crosshair, Maximize2, Pencil, Plus, Trash2, X } from 'lucide-react'
-import { isAuthed } from '../lib/auth'
+import { isAdmin, isAuthed } from '../lib/auth'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { PageHeader, TopBar } from '../ui/brand'
 import { DAY, type Category, type Hit, type Period, type Shape, SpiralRenderer, isoOf, msOf, todayISO } from '../lib/spiral'
 
 // Modul Spirála: časová osa života jako kuželová spirála (engine v lib/spiral.ts).
-// PROTOTYP — data zatím v localStorage, přechod na D1 jako u Zálivky přijde,
-// až bude doladěná mechanika spirály.
+// PROTOTYP. Data má každý uživatel v D1 (/api/spirala, jeden JSON na účet).
+// Dřív žila jen v localStorage pod klíčem STORE — ty adminovi (jedinému, kdo
+// Spirálu tehdy používal) při prvním otevření jednou přenesu na server.
 
 const STORE = 'hub:spirala:v3'
 
@@ -28,12 +29,42 @@ const DEFAULTS: Saved = {
   periods: [],
 }
 
-function load(): Saved {
+function loadLocal(): Saved | null {
   try {
     const raw = localStorage.getItem(STORE)
     if (raw) return { ...DEFAULTS, ...JSON.parse(raw) }
   } catch {
-    /* prázdné úložiště */
+    /* prázdné nebo nedostupné úložiště */
+  }
+  return null
+}
+
+async function saveRemote(data: Saved): Promise<void> {
+  const res = await fetch('/api/spirala', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error(`${res.status}`)
+}
+
+async function loadRemote(): Promise<Saved> {
+  const res = await fetch('/api/spirala')
+  if (!res.ok) throw new Error(`${res.status}`)
+  const body = (await res.json()) as { data: Saved | null }
+  if (body.data) return { ...DEFAULTS, ...body.data }
+
+  // Server je prázdný: jednorázová migrace z localStorage, jen pro admina —
+  // na sdíleném prohlížeči by si jinak cizí účet natáhl moje data.
+  const local = isAdmin() ? loadLocal() : null
+  if (local) {
+    await saveRemote(local)
+    try {
+      localStorage.removeItem(STORE)
+    } catch {
+      /* nevadí */
+    }
+    return local
   }
   return DEFAULTS
 }
@@ -75,22 +106,62 @@ type Draft = { id: string | null; cat: string; title: string; start: string; end
 export default function SpiralaPage() {
   const navigate = useNavigate()
   useDocumentTitle('Spirála · mmaly.cz')
+  const [initial, setInitial] = useState<Saved | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
   useEffect(() => {
-    if (!isAuthed()) navigate('/login?from=/private/spirala')
+    if (!isAuthed()) {
+      navigate('/login?from=/private/spirala')
+      return
+    }
+    loadRemote()
+      .then(setInitial)
+      .catch((e) => setLoadError(e instanceof Error ? e.message : String(e)))
   }, [navigate])
 
-  const [data, setData] = useState<Saved>(load)
+  if (loadError) {
+    return (
+      <div className="hub-page">
+        <TopBar section="privátní" />
+        <div className="hub-container">
+          <PageHeader back="/private" icon="🌀" title="Spirála" />
+          <p className="px-4 py-3 rounded-xl bg-raspberry/10 border border-raspberry/25 text-raspberry text-sm">
+            Nepodařilo se načíst data ({loadError}).
+          </p>
+        </div>
+      </div>
+    )
+  }
+  // Renderer se staví až nad načtenými daty, ať kamera sedí na správné datum narození.
+  if (!initial) return null
+  return <SpiralaView initial={initial} />
+}
+
+function SpiralaView({ initial }: { initial: Saved }) {
+  const [data, setData] = useState<Saved>(initial)
   const [mark, setMark] = useState(false)
   const [hover, setHover] = useState<Hit | null>(null)
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [saveError, setSaveError] = useState(false)
 
+  // Ukládání s krátkým zpožděním — tah po pásu mění data mnohokrát za vteřinu.
+  // Při odchodu ze stránky se rozjeté uložení dotáhne hned.
+  const pending = useRef<Saved | null>(null)
   useEffect(() => {
-    try {
-      localStorage.setItem(STORE, JSON.stringify(data))
-    } catch {
-      /* bez úložiště to jede jen v paměti */
-    }
-  }, [data])
+    if (data === initial) return
+    pending.current = data
+    const t = setTimeout(() => {
+      pending.current = null
+      saveRemote(data).then(() => setSaveError(false), () => setSaveError(true))
+    }, 700)
+    return () => clearTimeout(t)
+  }, [data, initial])
+  useEffect(
+    () => () => {
+      if (pending.current) saveRemote(pending.current).catch(() => {})
+    },
+    [],
+  )
 
   const wrapRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -307,7 +378,13 @@ export default function SpiralaPage() {
           icon="🌀"
           eyebrow="Prototyp"
           title="Spirála"
-          subtitle="Časová osa života · jedna otočka = jeden rok"
+          subtitle={
+            saveError ? (
+              <span className="text-raspberry">Neuloženo, server neodpovídá. Zkusím to při další změně.</span>
+            ) : (
+              'Časová osa života · jedna otočka = jeden rok'
+            )
+          }
           aside={
           <>
             <label className="hub-chip px-3 py-1.5 gap-2">

@@ -2,7 +2,7 @@
 
 Osobní landing page na [mmaly.cz](https://mmaly.cz) s rozcestníkem na projekty a webové appky.
 
-Hostováno na **Cloudflare Pages**. Stack: **React + Vite + TypeScript + Tailwind 4 + Framer Motion**. Privátní sekce chráněna heslem přes Cloudflare Pages Functions a invite-kód systém v KV.
+Hostováno na **Cloudflare Pages**. Stack: **React + Vite + TypeScript + Tailwind 4 + Framer Motion**. Privátní sekce s uživatelskými účty (registrace se schválením adminem) přes Cloudflare Pages Functions a D1.
 
 ---
 
@@ -12,9 +12,10 @@ Hostováno na **Cloudflare Pages**. Stack: **React + Vite + TypeScript + Tailwin
 ├── src/
 │   ├── pages/
 │   │   ├── HomePage.tsx       ← Hlavní landing — UPRAV ZDE pro projekty
-│   │   ├── LoginPage.tsx      ← /login (heslo + invite kód)
+│   │   ├── LoginPage.tsx      ← /login (přihlášení + registrace)
 │   │   ├── PrivatePage.tsx    ← /private (chráněná sekce)
-│   │   └── InvitesPage.tsx    ← /private/invites (admin)
+│   │   ├── UsersPage.tsx      ← /private/users (admin: schvalování, moduly)
+│   │   └── AccountPage.tsx    ← /private/account (změna hesla)
 │   ├── lib/auth.ts            ← cookie helpers (getCookie, isAuthed, isAdmin)
 │   ├── styles/                ← Tailwind + design tokens
 │   ├── routes.tsx             ← React Router config
@@ -28,9 +29,9 @@ Hostováno na **Cloudflare Pages**. Stack: **React + Vite + TypeScript + Tailwin
 ├── functions/
 │   ├── _middleware.js         ← Chrání /private/* (server-side cookie check)
 │   └── api/
-│       ├── login.js           ← POST /api/login {password|code} → set-cookie
+│       ├── login.js           ← POST /api/login {username, password} → set-cookie
 │       ├── logout.js          ← POST /api/logout
-│       ├── invite.js          ← GET/POST/DELETE /api/invite (KV-backed)
+│       ├── register.js, me.js, users.js, spirala.js, account/password.js
 │       ├── polymarket.js
 │       └── signals.js
 ├── index.html                 ← SPA shell
@@ -47,7 +48,7 @@ npm install
 npm run dev               # Vite na http://localhost:5173 (jen UI, bez API)
 ```
 
-Pro lokální test **s Functions** (login, invite, KV):
+Pro lokální test **s Functions** (login, účty, D1):
 
 ```bash
 npm run build
@@ -109,7 +110,6 @@ KV bindings (`Settings → Functions → KV namespace bindings`):
 
 | Binding name | KV namespace |
 |---|---|
-| `INVITES` | HUB_INVITES |
 | `SIGNALS` | HUB_SIGNALS |
 
 ### 3. Doména mmaly.cz
@@ -120,26 +120,37 @@ V Pages projektu → **Custom domains** → přidej `mmaly.cz` (a `www.mmaly.cz`
 
 ## Auth architektura
 
+Uživatelské účty v D1 (tabulka `users`, schema si funkce zakládají samy, reference
+`schema/users.sql`). Logika: `functions/_users.js`, podpis session: `functions/_auth.js`.
+
 ```
-POST /api/login {password}   → admin
-POST /api/login {code}       → invite code (KV lookup)
+POST /api/register {username, password, note?}  → účet 'pending' (čeká na schválení)
+POST /api/login    {username, password}          → session cookie
                 ↓ úspěch nastaví:
-                  hub_session=<payload>.<hmac>  (HttpOnly) — podepsaná session, nese roli (admin/user) + expiraci
-                  hub_ui=1                      (JS read)  — client UX gate
-                  hub_admin_ui=1                (JS read)  — admin UI hint (jen pro password login)
+                  hub_session=<payload>.<hmac>  (HttpOnly) — {uid, role, sv, exp}, HMAC-SHA256, klíč = HUB_PASSWORD
+                  hub_ui=1 / hub_admin_ui=1      (JS read)  — jen UX nápověda pro klienta
 
-functions/_auth.js — podpis a ověření session (HMAC-SHA256, klíč = HUB_PASSWORD)
-  ⚠ změna HUB_PASSWORD odhlásí všechny přihlášené (admin i invite)
-
-functions/_middleware.js → /private/* + datová API
-  - bez platné hub_session → 302 /login?from=...
-  - /private/invites bez role admin → 302 /private
-  - /api/geckos/* a /api/zalivka/* bez session → 403 JSON (ne redirect — fetch by
-    si redirect na login spolkl a tvářil se, že odpověď dorazila)
-  - cesta se před porovnáním normalizuje (%2F, zdvojená lomítka)
+functions/_middleware.js → /private/* a datová API
+  - každý request ověří session proti D1: účet existuje, je 'active', session_version sedí
+    (zablokování účtu nebo změna hesla tak platí okamžitě)
+  - moduly: zalivka, spirala, geckos, polymarket — nový účet má zalivka + spirala,
+    admin má všechno; cesta bez modulu → stránka 302 /private, API 403 JSON
+  - jen admin: /private/users, /private/payments, /api/users, /api/payments
+  - ověřený uživatel jde do funkcí v context.data.user
 ```
 
-Zbylé API endpointy (`/api/payments`, `/api/signals` GET, `/api/invite`) chtějí roli admin
-nebo ověřují tutéž podepsanou
-session. Webhooky (`/api/signals` POST, `/api/payment-proposals`) používají Bearer tokeny.
-Klientský guard (`src/lib/auth.ts`) čte `hub_ui` / `hub_admin_ui` pro UX. Reálný gate je server middleware.
+- **Hesla:** PBKDF2-SHA256, 100 000 iterací, 16 B sůl per účet; v DB jen hash.
+- **Rate limit (D1 `login_attempts`):** login 10 / 15 min na jméno a 30 / 15 min na IP,
+  registrace 5 / h na IP, max 20 čekajících účtů.
+- **Data per uživatel:** Zálivka přes `plants.owner_id`, Spirála `spiral_state.user_id`.
+  Gekoni jsou jen adminovi (modul geckos se dá povolit ručně, data jsou sdílená).
+- **Správa:** `/private/users` (schválit, zablokovat, moduly, reset hesla na dočasné, smazat
+  i s daty), `/private/account` (změna vlastního hesla, odhlásí ostatní zařízení).
+- **Bootstrap admina:** dokud v DB není admin, přihlášení jménem (např. `miki`) a heslem
+  `HUB_PASSWORD` založí admin účet a přiřadí mu dosavadní rostliny. Potom už `HUB_PASSWORD`
+  nikoho nepřihlásí, zůstává jen podpisovým klíčem (pozor: jeho změna odhlásí všechny).
+- **Zapomenuté admin heslo:** smazat admin řádek
+  (`npx wrangler d1 execute gekos --remote --command "DELETE FROM users WHERE role='admin'"`),
+  znovu bootstrap a pak převést rostliny na nové id:
+  `UPDATE plants SET owner_id = <nové id> WHERE owner_id = <staré id>`.
+- **Webhooky** (`/api/signals` POST, `/api/payment-proposals`) dál jedou na Bearer tokeny.

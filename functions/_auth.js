@@ -2,7 +2,11 @@
  * Podepsané session cookies — HMAC-SHA256, podpisový klíč je HUB_PASSWORD.
  *
  * Cookie `hub_session` = base64url(payload) + "." + base64url(hmac)
- * Payload: { role: 'admin' | 'user', exp: unix sekundy }
+ * Payload: { uid, role: 'admin' | 'user', sv, exp: unix sekundy }
+ *   uid = users.id, sv = users.session_version (zvýšením se odhlásí všude)
+ *
+ * Podpis jen dokazuje, že cookie vydal server. Jestli účet pořád existuje,
+ * je aktivní a sv sedí, ověřuje až getUser() v _users.js proti D1.
  *
  * Pozn.: změna HUB_PASSWORD zneplatní všechny existující sessions.
  */
@@ -32,9 +36,11 @@ function hmacKey(secret, usage) {
   );
 }
 
-export async function signSession(role, secret, maxAgeSeconds) {
+export async function signSession({ uid, role, sv }, secret, maxAgeSeconds) {
   const payload = enc.encode(JSON.stringify({
+    uid,
     role,
+    sv,
     exp: Math.floor(Date.now() / 1000) + maxAgeSeconds,
   }));
   const key = await hmacKey(secret, 'sign');
@@ -42,7 +48,7 @@ export async function signSession(role, secret, maxAgeSeconds) {
   return `${b64url(payload)}.${b64url(sig)}`;
 }
 
-/** Ověří hodnotu cookie; vrátí { role } nebo null. */
+/** Ověří hodnotu cookie; vrátí { uid, role, sv } nebo null. */
 export async function verifySession(value, secret) {
   if (!value || !secret) return null;
   const [payloadB64, sigB64] = value.split('.');
@@ -68,11 +74,13 @@ export async function verifySession(value, secret) {
   }
   if (typeof payload.exp !== 'number' || payload.exp < Math.floor(Date.now() / 1000)) return null;
   if (payload.role !== 'admin' && payload.role !== 'user') return null;
+  // Cookies z doby před účty (jen role, bez uid) už neplatí — vynutí nové přihlášení.
+  if (!Number.isInteger(payload.uid) || !Number.isInteger(payload.sv)) return null;
 
-  return { role: payload.role };
+  return { uid: payload.uid, role: payload.role, sv: payload.sv };
 }
 
-/** Přečte a ověří session z requestu; vrátí { role } nebo null. */
+/** Přečte a ověří podpis session z requestu; vrátí { uid, role, sv } nebo null. */
 export async function getSession(request, env) {
   const cookie = request.headers.get('Cookie') || '';
   for (const part of cookie.split(';')) {
