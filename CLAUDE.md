@@ -21,8 +21,13 @@ Plný popis: `design/identity-2.0.md`, živý vzorník: `/brand`.
   „Paleta"). Ve třídách používej `primary`, `mint`, `aqua`, `raspberry`, `apricot`,
   `success`, `warning`, `danger`, `info` (např. `text-mint`, `bg-aqua/10`,
   `border-raspberry/25`). Nikdy přímé Tailwind barvy (`blue-500`, `red-600`, `amber-…`).
-  Výjimky, kde hex musí být opsaný: `public/favicon.svg` a pruhy Spirály
-  (`src/pages/SpiralaPage.tsx`, canvas). Při změně palety upravit i je.
+  Výjimky, kde hex musí být opsaný: `public/favicon.svg`, pruhy Spirály
+  (`src/pages/SpiralaPage.tsx`, canvas), logo v gekos `GeckoShell` (bere CSS proměnné,
+  ok) a předvolby ladění v `src/lib/palette.ts` (preset „Skleník" = přesně paleta
+  z `theme.css`). Při změně palety upravit všechna místa, repo `MikiMaly/zalivka`
+  (`src/theme.css`, ikona v `index.html`) taky.
+- **Ladění palety:** `/brand#ladeni` přepíše paletu naživo jen v daném prohlížeči
+  (localStorage); výstup z tlačítka „Zkopírovat paletu" se zapisuje do `theme.css`.
 - **Sémantika:** OK = zelená, brzy/varování = meruňka, urgentní/chyba/mazání = malina,
   voda/info/odkazy/focus = akvamarín, admin věci = malina.
 - **Komponenty:** stránku stav z `.hub-page` + `TopBar` / `PageHeader` / `SiteFooter`

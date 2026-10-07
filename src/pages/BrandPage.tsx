@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Droplet, Key, Plus, Trash2 } from 'lucide-react'
+import { ArrowRight, Check, Copy, Droplet, Key, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import {
+  PALETTE_KEYS, PRESETS, basePalette, clearOverride, contrast, loadOverride, saveOverride,
+  type Palette, type PaletteKey,
+} from '../lib/palette'
 import { useDocumentTitle } from '../lib/useDocumentTitle'
 import { LogoMark, PageHeader, SiteFooter, TopBar, Wordmark } from '../ui/brand'
 
 // Vzorník identity 2.0 ("Skleník"). Není nikde prolinkovaný, slouží k ladění
-// palety: hex kódy se čtou živě z CSS proměnných v theme.css, takže co je
-// tady, to platí na celém webu.
+// palety: hex kódy se čtou živě z CSS proměnných, takže co je tady, to platí
+// na celém webu. Panel "Ladění" přepisuje paletu jen v tomhle prohlížeči
+// (lib/palette.ts); napevno se mění v theme.css.
 
 const SWATCHES: { token: string; name: string; role: string }[] = [
   { token: '--hub-green', name: 'Zelená', role: 'značka, primární akce, stav OK' },
@@ -28,9 +33,168 @@ const NEUTRALS: { token: string; name: string }[] = [
 function useCssVar(token: string): string {
   const [v, setV] = useState('')
   useEffect(() => {
-    setV(getComputedStyle(document.documentElement).getPropertyValue(token).trim())
+    const read = () => setV(getComputedStyle(document.documentElement).getPropertyValue(token).trim())
+    read()
+    window.addEventListener('hub:palette', read)
+    return () => window.removeEventListener('hub:palette', read)
   }, [token])
   return v
+}
+
+const HEX_RE = /^#[0-9a-f]{6}$/i
+
+// Kontrast textu na kartě (ink-2) a textu na zeleném tlačítku. WCAG AA:
+// 4.5 pro běžný text, 3 pro velký text a ikony.
+const CONTRAST_CHECKS: { fg: PaletteKey | 'btn'; bg: PaletteKey; label: string }[] = [
+  { fg: '--hub-text', bg: '--hub-ink-2', label: 'Text na kartě' },
+  { fg: '--hub-text-dim', bg: '--hub-ink-2', label: 'Tlumený text na kartě' },
+  { fg: '--hub-mint', bg: '--hub-ink-2', label: 'Mint na kartě' },
+  { fg: '--hub-aqua', bg: '--hub-ink-2', label: 'Akvamarín na kartě' },
+  { fg: '--hub-green', bg: '--hub-ink-2', label: 'Zelená na kartě' },
+  { fg: '--hub-raspberry', bg: '--hub-ink-2', label: 'Malina na kartě' },
+  { fg: '--hub-apricot', bg: '--hub-ink-2', label: 'Meruňka na kartě' },
+  { fg: 'btn', bg: '--hub-green', label: 'Text na zeleném tlačítku' },
+]
+
+function diffFromBase(p: Palette): Partial<Palette> {
+  const base = basePalette()
+  const out: Partial<Palette> = {}
+  for (const { key } of PALETTE_KEYS) if (p[key].toLowerCase() !== base[key].toLowerCase()) out[key] = p[key]
+  return out
+}
+
+function PaletteTuner() {
+  const [p, setP] = useState<Palette>(() => ({ ...basePalette(), ...(loadOverride() ?? {}) }))
+  const [drafts, setDrafts] = useState<Partial<Record<PaletteKey, string>>>({})
+  const [copied, setCopied] = useState(false)
+
+  const commit = (next: Palette) => {
+    setP(next)
+    const d = diffFromBase(next)
+    if (Object.keys(d).length === 0) clearOverride()
+    else saveOverride(d)
+  }
+
+  const setColor = (key: PaletteKey, value: string) => {
+    setDrafts((d) => ({ ...d, [key]: value }))
+    if (HEX_RE.test(value)) commit({ ...p, [key]: value.toLowerCase() })
+  }
+
+  const usePreset = (preset: Palette) => {
+    setDrafts({})
+    commit({ ...preset })
+  }
+
+  const reset = () => usePreset(basePalette())
+
+  const text = PALETTE_KEYS.map(({ key, name }) => `${key}: ${p[key]};  /* ${name} */`).join('\n')
+  const changed = Object.keys(diffFromBase(p)).length
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      /* text je vidět níž, jde označit ručně */
+    }
+  }
+
+  const row = (group: 'brand' | 'neutral') =>
+    PALETTE_KEYS.filter((k) => k.group === group).map(({ key, name }) => {
+      const base = basePalette()[key]
+      const isChanged = p[key].toLowerCase() !== base.toLowerCase()
+      return (
+        <label key={key} className="hub-card p-3 flex items-center gap-3">
+          <input
+            type="color"
+            value={p[key]}
+            onChange={(e) => setColor(key, e.target.value)}
+            className="w-12 h-12 shrink-0 rounded-lg cursor-pointer bg-transparent border border-border"
+            aria-label={name}
+          />
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-semibold flex items-center gap-2">
+              {name}
+              {isChanged && <span className="hub-pill hub-pill-info">upraveno</span>}
+            </div>
+            <input
+              value={drafts[key] ?? p[key]}
+              onChange={(e) => setColor(key, e.target.value.trim())}
+              onBlur={() => setDrafts((d) => ({ ...d, [key]: undefined }))}
+              className="hub-input !min-h-8 !py-1 mt-1 font-mono text-xs"
+              spellCheck={false}
+            />
+            {isChanged && <div className="hub-label mt-1 normal-case tracking-normal">původně {base}</div>}
+          </div>
+        </label>
+      )
+    })
+
+  return (
+    <section id="ladeni" className="mb-14 scroll-mt-20">
+      <div className="hub-eyebrow mb-2">Ladění palety</div>
+      <p className="text-sm text-muted-foreground mb-5 max-w-3xl">
+        Změny se hned projeví na celém webu, ale <b className="text-foreground">jen v tomhle prohlížeči</b>.
+        Projdi si s nimi homepage, Zálivku i gekony, a až to sedí, zkopíruj paletu a pošli mi ji. Zapíšu ji
+        napevno.
+      </p>
+
+      <div className="flex flex-wrap gap-2 mb-5">
+        {PRESETS.map((pr) => (
+          <button key={pr.name} onClick={() => usePreset(pr.palette)} className="hub-btn hub-btn-sm hub-btn-ghost" title={pr.note}>
+            <span className="flex -space-x-1">
+              {(['--hub-green', '--hub-aqua', '--hub-raspberry', '--hub-ink-2'] as PaletteKey[]).map((k) => (
+                <span key={k} className="w-3.5 h-3.5 rounded-full border border-border-strong" style={{ background: pr.palette[k] }} />
+              ))}
+            </span>
+            {pr.name}
+          </button>
+        ))}
+        <span className="flex-1" />
+        <button onClick={reset} disabled={changed === 0} className="hub-btn hub-btn-sm hub-btn-quiet">
+          <RotateCcw className="w-4 h-4" /> Vrátit paletu z webu
+        </button>
+        <button onClick={copy} className="hub-btn hub-btn-sm hub-btn-primary">
+          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+          {copied ? 'Zkopírováno' : 'Zkopírovat paletu'}
+        </button>
+      </div>
+
+      <div className="hub-label mb-2">Barvy značky</div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-5">{row('brand')}</div>
+      <div className="hub-label mb-2">Pozadí a text</div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 mb-5">{row('neutral')}</div>
+
+      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="hub-card p-4">
+          <div className="hub-label mb-3">Čitelnost (WCAG kontrast)</div>
+          <ul className="space-y-1.5 text-sm">
+            {CONTRAST_CHECKS.map((c) => {
+              const fg = c.fg === 'btn' ? '#04110a' : p[c.fg]
+              const r = contrast(fg, p[c.bg])
+              const tone = r >= 4.5 ? 'hub-pill-ok' : r >= 3 ? 'hub-pill-warn' : 'hub-pill-danger'
+              const verdict = r >= 4.5 ? 'OK' : r >= 3 ? 'jen velký text' : 'nečitelné'
+              return (
+                <li key={c.label} className="flex items-center gap-3">
+                  <span className="w-5 h-5 rounded grid place-items-center text-[0.65rem] font-bold shrink-0" style={{ background: p[c.bg], color: fg }}>
+                    Aa
+                  </span>
+                  <span className="flex-1">{c.label}</span>
+                  <span className="font-mono text-xs tabular-nums text-muted-foreground">{r.toFixed(1)}:1</span>
+                  <span className={'hub-pill ' + tone}>{verdict}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+        <div className="hub-card p-4">
+          <div className="hub-label mb-3">K odeslání {changed > 0 ? `(změněno ${changed})` : '(beze změny)'}</div>
+          <pre className="text-xs font-mono text-mint whitespace-pre-wrap leading-relaxed select-all">{text}</pre>
+        </div>
+      </div>
+    </section>
+  )
 }
 
 function Swatch({ token, name, role }: { token: string; name: string; role?: string }) {
@@ -58,7 +222,7 @@ export default function BrandPage() {
         <PageHeader
           back="/"
           backLabel="Domů"
-          eyebrow="Vizuální identita · návrh"
+          eyebrow="Vizuální identita"
           title={
             <>
               Skleník<span className="text-raspberry">.</span>
@@ -66,6 +230,8 @@ export default function BrandPage() {
           }
           subtitle="Tmavé sklo v noci, uvnitř roste zeleň. Zelená vede, mint a akvamarín ji chladí, malina je jediný teplý akcent."
         />
+
+        <PaletteTuner />
 
         <section className="mb-14">
           <div className="hub-eyebrow mb-4">Logo</div>
