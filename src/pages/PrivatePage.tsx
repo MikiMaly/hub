@@ -20,6 +20,10 @@ type ProjectCard = {
   small?: boolean
   // Modul, který kartu odemyká (viz functions/_users.js). Bez modulu = jen admin.
   module?: ModuleKey
+  // Služba z domácího serveru (Raspberry Pi) — vlastní řádek pod mřížkou.
+  homeserver?: boolean
+  // Otevřít v nové záložce, ať hub zůstane otevřený.
+  newTab?: boolean
 }
 
 const ALL_CARDS: ProjectCard[] = [
@@ -73,6 +77,47 @@ const ALL_CARDS: ProjectCard[] = [
     href: '/private/polymarket.html',
     external: true,
   },
+  // Domácí server — bez modulu, takže je vidí jen admin.
+  {
+    id: 'grafana',
+    icon: '📈',
+    title: 'Grafana',
+    description: 'Dashboardy z domácího serveru, přihlášení přes Cloudflare Access.',
+    tags: [],
+    href: 'https://dash.mmaly.cz',
+    homeserver: true,
+    newTab: true,
+  },
+  {
+    id: 'vaultwarden',
+    icon: '🔐',
+    title: 'Vaultwarden',
+    description: 'Správce hesel (Bitwarden).',
+    tags: [],
+    href: 'https://vault.mmaly.cz',
+    homeserver: true,
+    newTab: true,
+  },
+  {
+    id: 'homeassistant',
+    icon: '🏠',
+    title: 'Home Assistant',
+    description: 'Chytrá domácnost. Jen doma nebo přes Tailscale.',
+    tags: [],
+    href: 'http://192.168.0.105:8123',
+    homeserver: true,
+    newTab: true,
+  },
+  {
+    id: 'pihole',
+    icon: '🛡️',
+    title: 'Pi-hole',
+    description: 'Blokování reklam a DHCP. Jen doma nebo přes Tailscale.',
+    tags: [],
+    href: 'http://192.168.0.105:8081/admin',
+    homeserver: true,
+    newTab: true,
+  },
   {
     id: 'users',
     icon: '👥',
@@ -116,11 +161,13 @@ export default function PrivatePage() {
   const cards = ALL_CARDS.filter((c) => (c.module ? me.modules.includes(c.module) : admin))
 
   const open = (card: ProjectCard) => {
-    if (card.external) window.location.href = card.href
+    if (card.newTab) window.open(card.href, '_blank', 'noopener,noreferrer')
+    else if (card.external) window.location.href = card.href
     else navigate(card.href)
   }
 
-  const main = cards.filter((c) => !c.small)
+  const main = cards.filter((c) => !c.small && !c.homeserver)
+  const home = cards.filter((c) => c.homeserver)
   const tools = cards.filter((c) => c.small)
 
   return (
@@ -216,6 +263,29 @@ export default function PrivatePage() {
             </motion.button>
           ))}
         </div>
+
+        {/* Služby z domácího serveru — odkazy ven, proto akvamarín. */}
+        {home.length > 0 && (
+          <div className="mt-10">
+            <div className="hub-eyebrow mb-4">Domácí server</div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {home.map((card) => (
+                <button
+                  key={card.id}
+                  onClick={() => open(card)}
+                  className="hub-card hub-card-hover group text-left p-4 flex items-center gap-3"
+                >
+                  <div className="hub-icon-tile hub-icon-tile-aqua w-10 h-10 text-lg">{card.icon}</div>
+                  <div className="min-w-0">
+                    <div className="font-semibold group-hover:text-mint transition-colors">{card.title}</div>
+                    <div className="text-sm text-muted-foreground truncate">{card.description}</div>
+                  </div>
+                  <ExternalLink className="w-4 h-4 ml-auto text-muted-foreground group-hover:text-aqua shrink-0" />
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Drobné nástroje (pozvánky) zvlášť jako řádek dlaždic pod mřížkou. */}
         {tools.length > 0 && (
